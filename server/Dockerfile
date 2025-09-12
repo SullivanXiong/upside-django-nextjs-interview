@@ -11,7 +11,6 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -20,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . /app/
+RUN chmod -R 744 /app/db.sqlite3
 
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
@@ -29,4 +29,4 @@ USER appuser
 EXPOSE 8000
 
 # Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
