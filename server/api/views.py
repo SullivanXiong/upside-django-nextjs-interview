@@ -1,11 +1,24 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Count, Q
+from django.utils import timezone
+from datetime import timedelta
+import json
 
 # Create your views here.
 
 def index(request):
-    return HttpResponse("Hello, world! This is the API root.")
+    return JsonResponse({
+        "message": "Dashboard API",
+        "version": "1.0.0",
+        "endpoints": {
+            "events": "/api/events/",
+            "people": "/api/people/",
+            "dashboard_stats": "/api/dashboard/stats/",
+            "activity_timeline": "/api/dashboard/activity-timeline/",
+            "channel_breakdown": "/api/dashboard/channel-breakdown/"
+        }
+    })
 
 from .models import ActivityEvent, Person
 
@@ -64,3 +77,133 @@ def random_persons(request):
 
     persons = list(persons_qs.values())
     return JsonResponse(persons, safe=False)
+
+
+# -----------------------------------------------------------------------------
+# Dashboard API Endpoints
+# -----------------------------------------------------------------------------
+
+def dashboard_stats(request):
+    """Return dashboard statistics for the given customer."""
+    customer_org_id = request.GET.get("customer_org_id")
+    
+    if not customer_org_id:
+        return JsonResponse(
+            {"error": "'customer_org_id' query parameter is required."},
+            status=400,
+        )
+    
+    # Get date range (default to last 30 days)
+    days = int(request.GET.get("days", 30))
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get events for the customer
+    events_qs = ActivityEvent.objects.filter(
+        customer_org_id=customer_org_id,
+        timestamp__gte=start_date,
+        timestamp__lte=end_date
+    )
+    
+    # Get people for the customer
+    people_qs = Person.objects.filter(customer_org_id=customer_org_id)
+    
+    # Calculate statistics
+    total_events = events_qs.count()
+    total_people = people_qs.count()
+    
+    # Events by status
+    status_breakdown = list(events_qs.values('status').annotate(count=Count('status')))
+    
+    # Events by channel
+    channel_breakdown = list(events_qs.values('channel').annotate(count=Count('channel')))
+    
+    # Recent activity (last 7 days)
+    recent_events = events_qs.filter(
+        timestamp__gte=timezone.now() - timedelta(days=7)
+    ).count()
+    
+    stats = {
+        "total_events": total_events,
+        "total_people": total_people,
+        "recent_events": recent_events,
+        "status_breakdown": status_breakdown,
+        "channel_breakdown": channel_breakdown,
+        "date_range": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+            "days": days
+        }
+    }
+    
+    return JsonResponse(stats)
+
+
+def activity_timeline(request):
+    """Return activity events over time for chart visualization."""
+    customer_org_id = request.GET.get("customer_org_id")
+    
+    if not customer_org_id:
+        return JsonResponse(
+            {"error": "'customer_org_id' query parameter is required."},
+            status=400,
+        )
+    
+    # Get date range (default to last 30 days)
+    days = int(request.GET.get("days", 30))
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get events grouped by day
+    events_qs = ActivityEvent.objects.filter(
+        customer_org_id=customer_org_id,
+        timestamp__gte=start_date,
+        timestamp__lte=end_date
+    ).extra(
+        select={'day': 'date(timestamp)'}
+    ).values('day').annotate(count=Count('id')).order_by('day')
+    
+    timeline_data = list(events_qs)
+    
+    return JsonResponse({
+        "timeline": timeline_data,
+        "date_range": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+            "days": days
+        }
+    })
+
+
+def channel_breakdown(request):
+    """Return detailed breakdown of events by channel."""
+    customer_org_id = request.GET.get("customer_org_id")
+    
+    if not customer_org_id:
+        return JsonResponse(
+            {"error": "'customer_org_id' query parameter is required."},
+            status=400,
+        )
+    
+    # Get date range (default to last 30 days)
+    days = int(request.GET.get("days", 30))
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # Get events grouped by channel and status
+    events_qs = ActivityEvent.objects.filter(
+        customer_org_id=customer_org_id,
+        timestamp__gte=start_date,
+        timestamp__lte=end_date
+    ).values('channel', 'status').annotate(count=Count('id')).order_by('channel', 'status')
+    
+    breakdown_data = list(events_qs)
+    
+    return JsonResponse({
+        "breakdown": breakdown_data,
+        "date_range": {
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+            "days": days
+        }
+    })
