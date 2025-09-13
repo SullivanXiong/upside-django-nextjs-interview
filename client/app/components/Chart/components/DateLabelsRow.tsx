@@ -11,7 +11,7 @@ const DateLabelsRow: React.FC<DateLabelsRowProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`flex justify-between items-center py-2 ${className}`}>
+    <div className={`flex justify-between items-center py-1 ${className}`}>
       {data.labels.map((label, index) => (
         <div
           key={index}

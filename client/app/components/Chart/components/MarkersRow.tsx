@@ -11,7 +11,7 @@ const MarkersRow: React.FC<MarkersRowProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`flex justify-between items-center py-2 ${className}`}>
+    <div className={`flex justify-between items-center py-1 ${className}`}>
       {data.markers.map((marker, index) => {
         const dataIndex = data.labels.indexOf(marker.month);
         if (dataIndex === -1) return null;
