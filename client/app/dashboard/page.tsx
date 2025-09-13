@@ -1,0 +1,25 @@
+'use client';
+
+import React from 'react';
+import Chart from '../components/Chart/Chart';
+import Table from '../components/Table/Table';
+
+export default function Dashboard() {
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">Overview of your data and touchpoints</p>
+        </div>
+
+        {/* Chart Component */}
+        <Chart className="mb-6" />
+
+        {/* Table Component */}
+        <Table />
+      </div>
+    </div>
+  );
+}
