@@ -31,12 +31,12 @@ const ChartWithMarkersNew: React.FC<ChartWithMarkersNewProps> = ({
       </div>
       
       {/* Markers Row - Minimal gap between chart and markers */}
-      <div className="pt-1 pb-0">
+      <div className="pt-4 pb-0">
         <MarkersRow data={data} />
       </div>
       
       {/* Date Labels Row - Clean gap between markers and dates */}
-      <div className="py-1">
+      <div className="py-0">
         <DateLabelsRow data={data} />
       </div>
     </div>
