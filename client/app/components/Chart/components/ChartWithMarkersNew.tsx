@@ -19,7 +19,7 @@ const ChartWithMarkersNew: React.FC<ChartWithMarkersNewProps> = ({
   return (
     <div className={className}>
       {/* Chart Area */}
-      <div className="h-48">
+      <div className="h-44">
         <Line
           ref={chartRef}
           data={{
@@ -30,8 +30,8 @@ const ChartWithMarkersNew: React.FC<ChartWithMarkersNewProps> = ({
         />
       </div>
       
-      {/* Markers Row - Clean gap between chart and markers */}
-      <div className="py-1">
+      {/* Markers Row - Minimal gap between chart and markers */}
+      <div className="pt-1 pb-0">
         <MarkersRow data={data} />
       </div>
       
