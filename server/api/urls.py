@@ -15,4 +15,8 @@ urlpatterns = [
     path("api/dashboard/stats/", views.dashboard_stats, name="dashboard-stats"),
     path("api/dashboard/activity-timeline/", views.activity_timeline, name="activity-timeline"),
     path("api/dashboard/channel-breakdown/", views.channel_breakdown, name="channel-breakdown"),
+    
+    # New endpoints for frontend integration
+    path("api/touchpoints/", views.touchpoints, name="touchpoints"),
+    path("api/chart-data/", views.chart_data, name="chart-data"),
 ] 

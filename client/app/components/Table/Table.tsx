@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import TableData from './TableData';
@@ -17,90 +17,41 @@ import {
   StarIcon, 
   RefreshIcon
 } from '../Icons';
+import { fetchTouchpoints, TouchpointData } from '@/lib/api';
 
 interface TableProps {
   className?: string;
 }
 
-interface TouchpointData {
-  id: number;
-  type: 'outgoing' | 'incoming';
-  date: string;
-  activity: string;
-  people: string;
-  additionalPeople?: number;
-  channel: {
-    name: string;
-    color: 'purple' | 'gray' | 'yellow' | 'blue';
-  };
-  status: {
-    text: string;
-    icon: 'conversation' | 'booked' | 'chatted' | 'replied' | 'sent';
-  };
-  team: {
-    labels: string[];
-    colors: string[];
-  };
-}
-
 const Table: React.FC<TableProps> = ({ className = '' }) => {
-  // Sample data matching the reference image
-  const touchpoints: TouchpointData[] = [
-    {
-      id: 1,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Building one plant late',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 1,
-      channel: { name: 'Meeting', color: 'purple' },
-      status: { text: 'Conversation', icon: 'conversation' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 2,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Modern today six pretty hand the image',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 2,
-      channel: { name: 'Default', color: 'gray' },
-      status: { text: 'Booked a meeting', icon: 'booked' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    },
-    {
-      id: 3,
-      type: 'incoming',
-      date: 'Dec 1, 2023',
-      activity: 'Local focus bill set fast current',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 3,
-      channel: { name: 'Chatbot', color: 'yellow' },
-      status: { text: 'Chatted with bot', icon: 'chatted' },
-      team: { labels: ['SALES', 'SDR'], colors: ['blue', 'green'] }
-    },
-    {
-      id: 4,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Real especially hundred recent natural',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Replied', icon: 'replied' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 5,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Republican consumer feel',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Sent', icon: 'sent' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    }
-  ];
+  const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const loadTouchpoints = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetchTouchpoints(currentPage, 10);
+      setTouchpoints(response.touchpoints);
+      setTotalCount(response.total);
+    } catch (err) {
+      setError('Failed to load touchpoints');
+      console.error('Error loading touchpoints:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTouchpoints();
+  }, [currentPage]);
+
+  const handleRefresh = () => {
+    loadTouchpoints();
+  };
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
@@ -108,12 +59,23 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <h2 className="text-xl font-semibold text-green-600">Touchpoints</h2>
-          <span className="text-sm text-gray-500">[1506 total]</span>
+          <span className="text-sm text-gray-500">[{totalCount} total]</span>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-2">
-          <RefreshIcon size={20} />
+        <button 
+          className="text-gray-400 hover:text-gray-600 p-2 transition-colors"
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          <RefreshIcon size={20} className={isLoading ? 'animate-spin' : ''} />
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-red-50 border-b border-red-200">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -158,49 +120,85 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {touchpoints.map((touchpoint, index) => (
-              <TableRow key={touchpoint.id} isEven={index % 2 === 0}>
-                <TableData>
-                  <TypeCell type={touchpoint.type} />
-                </TableData>
-                <TableData>
-                  <span className="text-sm text-gray-900">{touchpoint.date}</span>
-                </TableData>
-                <TableData>
-                  <span className="text-sm text-gray-900">{touchpoint.activity}</span>
-                </TableData>
-                <TableData>
-                  <PeopleCell 
-                    name={touchpoint.people} 
-                    additionalCount={touchpoint.additionalPeople} 
-                  />
-                </TableData>
-                <TableData>
-                  <ChannelCell 
-                    name={touchpoint.channel.name} 
-                    color={touchpoint.channel.color} 
-                  />
-                </TableData>
-                <TableData>
-                  <StatusCell 
-                    text={touchpoint.status.text} 
-                    icon={touchpoint.status.icon} 
-                  />
-                </TableData>
-                <TableData>
-                  <TeamCell 
-                    labels={touchpoint.team.labels} 
-                    colors={touchpoint.team.colors} 
-                  />
-                </TableData>
-              </TableRow>
-            ))}
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8">
+                  <div className="flex justify-center items-center space-x-2">
+                    <RefreshIcon size={20} className="animate-spin text-gray-400" />
+                    <span className="text-gray-500">Loading touchpoints...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : touchpoints.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-gray-500">
+                  No touchpoints found
+                </td>
+              </tr>
+            ) : (
+              touchpoints.map((touchpoint, index) => (
+                <TableRow key={touchpoint.id} isEven={index % 2 === 0}>
+                  <TableData>
+                    <TypeCell type={touchpoint.type} />
+                  </TableData>
+                  <TableData>
+                    <span className="text-sm text-gray-900">{touchpoint.date}</span>
+                  </TableData>
+                  <TableData>
+                    <span className="text-sm text-gray-900">{touchpoint.activity}</span>
+                  </TableData>
+                  <TableData>
+                    <PeopleCell 
+                      name={touchpoint.people} 
+                      additionalCount={touchpoint.additionalPeople} 
+                    />
+                  </TableData>
+                  <TableData>
+                    <ChannelCell 
+                      name={touchpoint.channel.name} 
+                      color={touchpoint.channel.color} 
+                    />
+                  </TableData>
+                  <TableData>
+                    <StatusCell 
+                      text={touchpoint.status.text} 
+                      icon={touchpoint.status.icon} 
+                    />
+                  </TableData>
+                  <TableData>
+                    <TeamCell 
+                      labels={touchpoint.team.labels} 
+                      colors={touchpoint.team.colors} 
+                    />
+                  </TableData>
+                </TableRow>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="flex justify-center py-4">
+      {/* Pagination / Scroll indicator */}
+      <div className="flex justify-between items-center px-6 py-4">
+        <div className="flex space-x-2">
+          <button 
+            className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1 || isLoading}
+          >
+            Previous
+          </button>
+          <span className="px-3 py-1 text-sm">
+            Page {currentPage}
+          </span>
+          <button 
+            className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => setCurrentPage(p => p + 1)}
+            disabled={touchpoints.length < 10 || isLoading}
+          >
+            Next
+          </button>
+        </div>
         <div className="flex space-x-1">
           <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
           <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
