@@ -1,5 +1,6 @@
 /**
  * Activity Timeline Hook
+ * Fetches activity timeline data for chart visualization from the Django API
  */
 
 import { useState, useEffect } from 'react';

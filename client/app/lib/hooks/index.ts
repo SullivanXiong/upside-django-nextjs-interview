@@ -1,5 +1,6 @@
 /**
- * Export all hooks
+ * Export all hooks from a single location
+ * This provides a clean API for importing hooks throughout the application
  */
 
 export { useDashboardStats } from './useDashboardStats';

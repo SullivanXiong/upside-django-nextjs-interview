@@ -1,5 +1,6 @@
 /**
  * Base API Client
+ * Handles all HTTP requests to the backend with error handling
  */
 
 import { API_BASE_URL } from './config';
@@ -66,6 +67,29 @@ export class ApiClient {
         'Content-Type': 'application/json',
       },
       body: data ? JSON.stringify(data) : undefined,
+    });
+
+    return this.handleResponse<T>(response);
+  }
+
+  async put<T>(endpoint: string, data?: any): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    return this.handleResponse<T>(response);
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     return this.handleResponse<T>(response);

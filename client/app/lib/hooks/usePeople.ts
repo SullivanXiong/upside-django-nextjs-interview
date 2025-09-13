@@ -1,5 +1,6 @@
 /**
  * People Hook
+ * Fetches people/persons data from the Django API
  */
 
 import { useState, useEffect } from 'react';

@@ -1,5 +1,6 @@
 /**
  * API Types
+ * TypeScript interfaces for all API request and response types
  */
 
 // Activity Event Types
@@ -88,4 +89,19 @@ export interface EventsRequestParams {
 
 export interface PeopleRequestParams {
   customer_org_id: string;
+}
+
+// API Response Types
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  error?: string;
+}
+
+// Pagination Types (for future use)
+export interface PaginatedResponse<T> {
+  results: T[];
+  count: number;
+  next?: string;
+  previous?: string;
 }

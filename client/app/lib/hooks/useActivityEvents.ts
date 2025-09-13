@@ -1,5 +1,6 @@
 /**
  * Activity Events Hook
+ * Fetches activity events from the Django API
  */
 
 import { useState, useEffect } from 'react';

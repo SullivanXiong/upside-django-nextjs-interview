@@ -1,5 +1,6 @@
 /**
  * Dashboard Stats Hook
+ * Fetches dashboard statistics including totals and breakdowns from the Django API
  */
 
 import { useState, useEffect } from 'react';
