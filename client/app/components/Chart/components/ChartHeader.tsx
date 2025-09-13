@@ -3,6 +3,7 @@ import ChartControls from './ChartControls';
 
 interface ChartHeaderProps {
   title: string;
+  subtitle?: string;
   showBids: boolean;
   onToggleBids: (show: boolean) => void;
   className?: string;
@@ -10,13 +11,19 @@ interface ChartHeaderProps {
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({ 
   title, 
+  subtitle,
   showBids, 
   onToggleBids, 
   className = '' 
 }) => {
   return (
     <div className={`flex items-center justify-between mb-6 ${className}`}>
-      <h2 className="text-xl font-semibold text-green-600">{title}</h2>
+      <div className="flex items-center space-x-2">
+        <h2 className="text-xl font-semibold text-green-600">{title}</h2>
+        {subtitle && (
+          <span className="text-sm text-gray-500">[{subtitle}]</span>
+        )}
+      </div>
       <ChartControls 
         showBids={showBids} 
         onToggleBids={onToggleBids} 
