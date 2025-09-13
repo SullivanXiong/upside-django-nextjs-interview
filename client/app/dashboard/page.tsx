@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import Chart from '@/components/Chart/Chart';
-import Table from '@/components/Table/Table';
+import { Chart } from '@/components/Chart';
+import { Table } from '@/components/Table';
 import ModeToggle from '@/components/darkmode-toggle/darkmode-toggle';
 
 export default function Dashboard() {

@@ -31,7 +31,7 @@ interface TouchpointData {
   additionalPeople?: number;
   channel: {
     name: string;
-    color: string;
+    color: 'purple' | 'gray' | 'yellow' | 'blue';
   };
   status: {
     text: string;
