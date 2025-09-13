@@ -4,6 +4,7 @@ from django.db.models import QuerySet, Count, Q
 from django.utils import timezone
 from datetime import timedelta
 import json
+from typing import Dict, List, Set
 
 # Create your views here.
 
@@ -53,8 +54,41 @@ def random_activity_events(request):
     )
 
     # Use .values() to get dictionaries of all model fields.
-    events = list(events_qs.values())
-    return JsonResponse(events, safe=False)
+    raw_events: List[dict] = list(events_qs.values())
+
+    # Enrich people with names from Person table
+    person_ids: Set[str] = set()
+    for ev in raw_events:
+        for p in ev.get("people", []) or []:
+            pid = p.get("id")
+            if pid:
+                person_ids.add(pid)
+
+    people_lookup: Dict[str, dict] = {}
+    if person_ids:
+        for person in Person.objects.filter(id__in=person_ids).values("id", "first_name", "last_name"):
+            people_lookup[person["id"]] = {
+                "id": person["id"],
+                "first_name": person.get("first_name") or "",
+                "last_name": person.get("last_name") or "",
+            }
+
+    for ev in raw_events:
+        enriched_people: List[dict] = []
+        for p in ev.get("people", []) or []:
+            pid = p.get("id")
+            base = {"id": pid}
+            if pid in people_lookup:
+                base.update(people_lookup[pid])
+            else:
+                base.update({"first_name": "", "last_name": ""})
+            # preserve role if present
+            if p.get("role_in_touchpoint"):
+                base["role_in_touchpoint"] = p.get("role_in_touchpoint")
+            enriched_people.append(base)
+        ev["people"] = enriched_people
+
+    return JsonResponse(raw_events, safe=False)
 
 def random_persons(request):
     """Return up to 5 random Person records for the given customer.

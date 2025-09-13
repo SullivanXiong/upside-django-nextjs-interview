@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import TableData from './TableData';
@@ -9,6 +9,7 @@ import PeopleCell from './PeopleCell';
 import ChannelCell from './ChannelCell';
 import StatusCell from './StatusCell';
 import TeamCell from './TeamCell';
+import { fetchJson, getDefaultIdentifiers } from '@/lib/api';
 import { 
   CalendarIcon, 
   ChartIcon, 
@@ -44,62 +45,72 @@ interface TouchpointData {
 }
 
 const Table: React.FC<TableProps> = ({ className = '' }) => {
-  // Sample data matching the reference image
-  const touchpoints: TouchpointData[] = [
-    {
-      id: 1,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Building one plant late',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 1,
-      channel: { name: 'Meeting', color: 'purple' },
-      status: { text: 'Conversation', icon: 'conversation' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 2,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Modern today six pretty hand the image',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 2,
-      channel: { name: 'Default', color: 'gray' },
-      status: { text: 'Booked a meeting', icon: 'booked' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    },
-    {
-      id: 3,
-      type: 'incoming',
-      date: 'Dec 1, 2023',
-      activity: 'Local focus bill set fast current',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 3,
-      channel: { name: 'Chatbot', color: 'yellow' },
-      status: { text: 'Chatted with bot', icon: 'chatted' },
-      team: { labels: ['SALES', 'SDR'], colors: ['blue', 'green'] }
-    },
-    {
-      id: 4,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Real especially hundred recent natural',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Replied', icon: 'replied' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 5,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Republican consumer feel',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Sent', icon: 'sent' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    }
-  ];
+  const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const channelColorMap = useMemo(() => ({
+    Meeting: 'purple',
+    Default: 'gray',
+    Chatbot: 'yellow',
+    'Direct Email': 'blue',
+  } as Record<string, 'purple' | 'gray' | 'yellow' | 'blue'>), []);
+
+  const statusIconMap = useMemo(() => ({
+    Conversation: 'conversation',
+    'Booked a meeting': 'booked',
+    'Chatted with bot': 'chatted',
+    Replied: 'replied',
+    Sent: 'sent',
+  } as Record<string, 'conversation' | 'booked' | 'chatted' | 'replied' | 'sent'>), []);
+
+  useEffect(() => {
+    const { customerOrgId, accountId } = getDefaultIdentifiers();
+    const params = new URLSearchParams({
+      customer_org_id: customerOrgId,
+      account_id: accountId,
+    });
+
+    setIsLoading(true);
+    setError(null);
+    fetchJson<any[]>(`/api/events/random/?${params.toString()}`)
+      .then((events) => {
+        const mapped: TouchpointData[] = events.map((e) => {
+          const primaryPerson = Array.isArray(e.people) && e.people.length > 0 ? e.people[0] : null;
+          const fullName = primaryPerson ? `${primaryPerson.first_name || ''} ${primaryPerson.last_name || ''}`.trim() : 'Unknown';
+          const additionalCount = Array.isArray(e.people) && e.people.length > 1 ? e.people.length - 1 : undefined;
+          const date = e.timestamp ? new Date(e.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+          const channelName: string = e.channel || 'Default';
+          const channelColor = channelColorMap[channelName] || 'gray';
+
+          const statusText: string = e.status || 'Conversation';
+          const statusIcon = statusIconMap[statusText] || 'conversation';
+
+          const teamIds: string[] = Array.isArray(e.involved_team_ids) ? e.involved_team_ids : [];
+          const teamLabels = teamIds.length > 0 ? teamIds.map((t) => String(t).toUpperCase()) : ['UNKNOWN'];
+          const colorPalette = ['gray', 'red', 'blue', 'green'] as const;
+          const teamColors = teamLabels.map((_, idx) => colorPalette[idx % colorPalette.length]);
+
+          return {
+            id: Number(e.id) || Math.floor(Math.random() * 1_000_000),
+            type: (e.direction || '').toLowerCase() === 'in' ? 'incoming' : 'outgoing',
+            date,
+            activity: e.activity || '',
+            people: fullName,
+            additionalPeople: additionalCount,
+            channel: { name: channelName, color: channelColor },
+            status: { text: statusText, icon: statusIcon },
+            team: { labels: teamLabels, colors: teamColors as unknown as string[] },
+          } as TouchpointData;
+        });
+        setTouchpoints(mapped);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to load');
+      })
+      .finally(() => setIsLoading(false));
+  }, [channelColorMap, statusIconMap]);
 
 
   return (
@@ -158,7 +169,17 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {touchpoints.map((touchpoint, index) => (
+            {isLoading && (
+              <tr>
+                <td className="px-6 py-4 text-sm text-gray-500" colSpan={7}>Loading...</td>
+              </tr>
+            )}
+            {error && !isLoading && (
+              <tr>
+                <td className="px-6 py-4 text-sm text-red-600" colSpan={7}>{error}</td>
+              </tr>
+            )}
+            {!isLoading && !error && touchpoints.map((touchpoint, index) => (
               <TableRow key={touchpoint.id} isEven={index % 2 === 0}>
                 <TableData>
                   <TypeCell type={touchpoint.type} />
