@@ -2,13 +2,15 @@ import React, { useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS } from 'chart.js';
 import { ChartData, chartOptions } from '../chartConfig';
+import MarkersRow from './MarkersRow';
+import DateLabelsRow from './DateLabelsRow';
 
-interface ChartWithMarkersProps {
+interface ChartWithMarkersNewProps {
   data: ChartData;
   className?: string;
 }
 
-const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({ 
+const ChartWithMarkersNew: React.FC<ChartWithMarkersNewProps> = ({ 
   data, 
   className = '' 
 }) => {
@@ -27,8 +29,18 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
           options={chartOptions}
         />
       </div>
+      
+      {/* Markers Row - Clean gap between chart and markers */}
+      <div className="py-2">
+        <MarkersRow data={data} />
+      </div>
+      
+      {/* Date Labels Row - Clean gap between markers and dates */}
+      <div className="py-2">
+        <DateLabelsRow data={data} />
+      </div>
     </div>
   );
 };
 
-export default ChartWithMarkers;
+export default ChartWithMarkersNew;

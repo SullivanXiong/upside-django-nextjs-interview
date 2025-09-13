@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChartContainer, ChartHeader, ChartWithMarkers } from './components';
+import { ChartContainer, ChartHeader, ChartWithMarkersNew } from './components';
 import { defaultChartData, ChartData } from './chartConfig';
 
 interface ChartProps {
@@ -20,9 +20,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
         onToggleBids={setShowBids}
       />
       
-      <div className="h-64">
-        <ChartWithMarkers data={chartData} />
-      </div>
+      <ChartWithMarkersNew data={chartData} />
     </ChartContainer>
   );
 };
