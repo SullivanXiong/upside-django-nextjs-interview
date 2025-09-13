@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import TableData from './TableData';
@@ -17,9 +17,13 @@ import {
   StarIcon, 
   RefreshIcon
 } from '../Icons';
+import { useApiData } from '@/lib/hooks/useApiData';
+import { apiClient, ActivityEvent } from '@/lib/api';
 
 interface TableProps {
   className?: string;
+  customerOrgId?: string;
+  accountId?: string;
 }
 
 interface TouchpointData {
@@ -43,64 +47,120 @@ interface TouchpointData {
   };
 }
 
-const Table: React.FC<TableProps> = ({ className = '' }) => {
-  // Sample data matching the reference image
-  const touchpoints: TouchpointData[] = [
-    {
-      id: 1,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Building one plant late',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 1,
-      channel: { name: 'Meeting', color: 'purple' },
-      status: { text: 'Conversation', icon: 'conversation' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 2,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Modern today six pretty hand the image',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 2,
-      channel: { name: 'Default', color: 'gray' },
-      status: { text: 'Booked a meeting', icon: 'booked' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    },
-    {
-      id: 3,
-      type: 'incoming',
-      date: 'Dec 1, 2023',
-      activity: 'Local focus bill set fast current',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 3,
-      channel: { name: 'Chatbot', color: 'yellow' },
-      status: { text: 'Chatted with bot', icon: 'chatted' },
-      team: { labels: ['SALES', 'SDR'], colors: ['blue', 'green'] }
-    },
-    {
-      id: 4,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Real especially hundred recent natural',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Replied', icon: 'replied' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 5,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Republican consumer feel',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Sent', icon: 'sent' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    }
-  ];
+const getChannelColor = (channel: string): 'purple' | 'gray' | 'yellow' | 'blue' => {
+  const channelMap: { [key: string]: 'purple' | 'gray' | 'yellow' | 'blue' } = {
+    'Meeting': 'purple',
+    'Default': 'gray',
+    'Chatbot': 'yellow',
+    'Direct Email': 'blue',
+    'Email': 'blue',
+    'Phone': 'purple',
+    'Chat': 'yellow',
+    'Web': 'gray',
+  };
+  return channelMap[channel] || 'gray';
+};
 
+const getStatusIcon = (status: string): 'conversation' | 'booked' | 'chatted' | 'replied' | 'sent' => {
+  const statusMap: { [key: string]: 'conversation' | 'booked' | 'chatted' | 'replied' | 'sent' } = {
+    'Conversation': 'conversation',
+    'Booked a meeting': 'booked',
+    'Chatted with bot': 'chatted',
+    'Replied': 'replied',
+    'Sent': 'sent',
+    'Completed': 'conversation',
+    'Scheduled': 'booked',
+    'In Progress': 'conversation',
+  };
+  return statusMap[status] || 'conversation';
+};
+
+const Table: React.FC<TableProps> = ({ 
+  className = '', 
+  customerOrgId = 'org_4m6zyrass98vvtk3xh5kcwcmaf',
+  accountId = 'account_31crr1tcp2bmcv1fk6pcm0k6ag'
+}) => {
+  const { data: events, loading, error, refetch } = useApiData<ActivityEvent[]>(
+    () => apiClient.getRandomActivityEvents(customerOrgId, accountId),
+    [customerOrgId, accountId]
+  );
+
+  const touchpoints: TouchpointData[] = useMemo(() => {
+    if (!events) return [];
+
+    return events.map((event, index) => {
+      const date = new Date(event.timestamp);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+
+      // Extract people names from the people JSON field
+      const peopleNames = Array.isArray(event.people) 
+        ? event.people.map((person: any) => person.name || person.first_name || 'Unknown').join(', ')
+        : 'Unknown';
+
+      // Get team information from involved_team_ids
+      const teamLabels = Array.isArray(event.involved_team_ids) 
+        ? event.involved_team_ids.map((team: any) => team.name || team.id || 'UNKNOWN')
+        : ['UNKNOWN'];
+
+      const teamColors = teamLabels.map(() => 
+        ['red', 'blue', 'green', 'yellow', 'purple', 'gray'][Math.floor(Math.random() * 6)]
+      );
+
+      return {
+        id: event.id,
+        type: event.direction === 'OUT' ? 'outgoing' : 'incoming',
+        date: formattedDate,
+        activity: event.activity || 'No activity description',
+        people: peopleNames,
+        additionalPeople: Math.max(0, (event.people?.length || 1) - 1),
+        channel: { 
+          name: event.channel || 'Unknown', 
+          color: getChannelColor(event.channel || 'Unknown')
+        },
+        status: { 
+          text: event.status || 'Unknown', 
+          icon: getStatusIcon(event.status || 'Unknown')
+        },
+        team: { 
+          labels: teamLabels, 
+          colors: teamColors
+        }
+      };
+    });
+  }, [events]);
+
+
+  if (loading) {
+    return (
+      <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading touchpoints...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">
+            Error loading touchpoints: {error}
+            <button 
+              onClick={refetch}
+              className="ml-2 text-blue-500 hover:text-blue-700 underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
@@ -108,9 +168,12 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <h2 className="text-xl font-semibold text-green-600">Touchpoints</h2>
-          <span className="text-sm text-gray-500">[1506 total]</span>
+          <span className="text-sm text-gray-500">[{touchpoints.length} total]</span>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-2">
+        <button 
+          onClick={refetch}
+          className="text-gray-400 hover:text-gray-600 p-2"
+        >
           <RefreshIcon size={20} />
         </button>
       </div>
