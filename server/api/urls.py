@@ -15,4 +15,6 @@ urlpatterns = [
     path("api/dashboard/stats/", views.dashboard_stats, name="dashboard-stats"),
     path("api/dashboard/activity-timeline/", views.activity_timeline, name="activity-timeline"),
     path("api/dashboard/channel-breakdown/", views.channel_breakdown, name="channel-breakdown"),
+    # Latest enriched events for frontend table
+    path("api/events/latest/", views.latest_activity_events, name="latest-activity-events"),
 ] 

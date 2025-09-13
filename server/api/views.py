@@ -207,3 +207,143 @@ def channel_breakdown(request):
             "days": days
         }
     })
+
+
+# -----------------------------------------------------------------------------
+# Enriched Events Endpoint for Frontend Table
+# -----------------------------------------------------------------------------
+
+def latest_activity_events(request):
+    """Return latest ActivityEvent records, enriched for the frontend table.
+
+    Query parameters:
+    - customer_org_id (required)
+    - account_id (required)
+    - limit (optional, default=5)
+    """
+
+    customer_org_id = request.GET.get("customer_org_id")
+    account_id = request.GET.get("account_id")
+    try:
+        limit = int(request.GET.get("limit", 5))
+    except ValueError:
+        limit = 5
+
+    if not customer_org_id or not account_id:
+        return JsonResponse(
+            {
+                "error": "Both 'customer_org_id' and 'account_id' query parameters are required."
+            },
+            status=400,
+        )
+
+    # Map channels to color tokens used by the UI
+    channel_color_map = {
+        "Meeting": "purple",
+        "Event": "purple",
+        "Event With Webinar": "purple",
+        "Default": "gray",
+        "Email": "gray",
+        "Bulk Marketing Email": "gray",
+        "Chatbot": "yellow",
+        "Direct Email": "blue",
+    }
+
+    # Map team ids to human labels and UI color chips
+    team_label_color_map = {
+        "team_marketing": ("MARKETING", "red"),
+        "team_sales": ("SALES", "blue"),
+        "team_sdr": ("SDR", "green"),
+    }
+
+    # Map statuses to icons used by the UI
+    def map_status_to_icon(channel: str, status: str) -> str:
+        normalized = (status or "").strip().upper()
+        if channel == "Direct Email":
+            if normalized == "REPLIED":
+                return "replied"
+            return "sent"
+        if channel == "Chatbot":
+            return "chatted"
+        if "BOOK" in normalized:
+            return "booked"
+        return "conversation"
+
+    events_qs: QuerySet = (
+        ActivityEvent.objects.filter(
+            customer_org_id=customer_org_id,
+            account_id=account_id,
+        )
+        .order_by("-timestamp")[: max(1, min(limit, 50))]
+    )
+
+    results: list[dict] = []
+
+    # Build enriched rows for the table
+    for index, ev in enumerate(events_qs, start=1):
+        # People enrichment: take the first person as the primary display name
+        primary_person_name = "Unknown Person"
+        additional_people_count = 0
+        try:
+            people_list = ev.people or []
+            additional_people_count = max(0, len(people_list) - 1)
+            if people_list:
+                first_person_id = people_list[0].get("id")
+                if first_person_id:
+                    p = Person.objects.filter(id=first_person_id).first()
+                    if p:
+                        primary_person_name = f"{p.first_name} {p.last_name}"
+        except Exception:  # pragma: no cover - defensive against unexpected data
+            pass
+
+        # Channel UI mapping
+        channel_name = ev.channel or "Default"
+        channel_color = channel_color_map.get(channel_name, "gray")
+
+        # Status UI mapping
+        status_text = ev.status or ""
+        status_icon = map_status_to_icon(channel_name, status_text)
+
+        # Team labels/colors
+        team_labels: list[str] = []
+        team_colors: list[str] = []
+        try:
+            for team_id in (ev.involved_team_ids or []):
+                label, color = team_label_color_map.get(team_id, ("UNKNOWN", "gray"))
+                team_labels.append(label)
+                team_colors.append(color)
+            if not team_labels:
+                team_labels.append("UNKNOWN")
+                team_colors.append("gray")
+        except Exception:  # pragma: no cover
+            team_labels = ["UNKNOWN"]
+            team_colors = ["gray"]
+
+        # Type mapping from direction
+        if (ev.direction or "").upper() == "IN":
+            event_type = "incoming"
+        else:
+            event_type = "outgoing"
+
+        # Date formatting (e.g., "Dec 1, 2023")
+        try:
+            date_str = ev.timestamp.strftime("%b %-d, %Y")  # Linux-compatible
+        except Exception:
+            # Fallback for platforms where %-d is unsupported
+            date_str = ev.timestamp.strftime("%b %d, %Y").replace(" 0", " ")
+
+        results.append(
+            {
+                "id": index,
+                "type": event_type,
+                "date": date_str,
+                "activity": ev.activity or "",
+                "people": primary_person_name,
+                "additionalPeople": additional_people_count,
+                "channel": {"name": channel_name, "color": channel_color},
+                "status": {"text": status_text or "", "icon": status_icon},
+                "team": {"labels": team_labels, "colors": team_colors},
+            }
+        )
+
+    return JsonResponse(results, safe=False)

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import TableData from './TableData';
@@ -9,6 +9,7 @@ import PeopleCell from './PeopleCell';
 import ChannelCell from './ChannelCell';
 import StatusCell from './StatusCell';
 import TeamCell from './TeamCell';
+import { fetchLatestEvents, EnrichedEvent } from '@/lib/api';
 import { 
   CalendarIcon, 
   ChartIcon, 
@@ -22,85 +23,33 @@ interface TableProps {
   className?: string;
 }
 
-interface TouchpointData {
-  id: number;
-  type: 'outgoing' | 'incoming';
-  date: string;
-  activity: string;
-  people: string;
-  additionalPeople?: number;
-  channel: {
-    name: string;
-    color: 'purple' | 'gray' | 'yellow' | 'blue';
-  };
-  status: {
-    text: string;
-    icon: 'conversation' | 'booked' | 'chatted' | 'replied' | 'sent';
-  };
-  team: {
-    labels: string[];
-    colors: string[];
-  };
-}
+type TouchpointData = EnrichedEvent;
 
 const Table: React.FC<TableProps> = ({ className = '' }) => {
-  // Sample data matching the reference image
-  const touchpoints: TouchpointData[] = [
-    {
-      id: 1,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Building one plant late',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 1,
-      channel: { name: 'Meeting', color: 'purple' },
-      status: { text: 'Conversation', icon: 'conversation' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 2,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Modern today six pretty hand the image',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 2,
-      channel: { name: 'Default', color: 'gray' },
-      status: { text: 'Booked a meeting', icon: 'booked' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    },
-    {
-      id: 3,
-      type: 'incoming',
-      date: 'Dec 1, 2023',
-      activity: 'Local focus bill set fast current',
-      people: 'Dorothy Atkinson',
-      additionalPeople: 3,
-      channel: { name: 'Chatbot', color: 'yellow' },
-      status: { text: 'Chatted with bot', icon: 'chatted' },
-      team: { labels: ['SALES', 'SDR'], colors: ['blue', 'green'] }
-    },
-    {
-      id: 4,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Real especially hundred recent natural',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Replied', icon: 'replied' },
-      team: { labels: ['UNKNOWN'], colors: ['gray'] }
-    },
-    {
-      id: 5,
-      type: 'outgoing',
-      date: 'Dec 1, 2023',
-      activity: 'Republican consumer feel',
-      people: 'Dorothy Atkinson',
-      channel: { name: 'Direct Email', color: 'blue' },
-      status: { text: 'Sent', icon: 'sent' },
-      team: { labels: ['MARKETING'], colors: ['red'] }
-    }
-  ];
+  const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const customerOrgId = useMemo(() => process.env.NEXT_PUBLIC_CUSTOMER_ORG_ID || 'org_4m6zyrass98vvtk3xh5kcwcmaf', []);
+  const accountId = useMemo(() => process.env.NEXT_PUBLIC_ACCOUNT_ID || 'account_31crr1tcp2bmcv1fk6pcm0k6ag', []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchLatestEvents({ customerOrgId, accountId, limit: 5 });
+      setTouchpoints(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load events');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerOrgId, accountId]);
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
@@ -108,12 +57,19 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <h2 className="text-xl font-semibold text-green-600">Touchpoints</h2>
-          <span className="text-sm text-gray-500">[1506 total]</span>
+          <span className="text-sm text-gray-500">[{touchpoints.length} shown]</span>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-2">
+        <button onClick={loadData} className="text-gray-400 hover:text-gray-600 p-2" aria-label="Refresh">
           <RefreshIcon size={20} />
         </button>
       </div>
+
+      {isLoading && (
+        <div className="p-6 text-sm text-gray-500">Loading latest events…</div>
+      )}
+      {error && (
+        <div className="p-6 text-sm text-red-600">{error}</div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">

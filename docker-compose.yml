@@ -27,6 +27,8 @@ services:
       - ./client/.next/:/app/.next
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_CUSTOMER_ORG_ID=org_4m6zyrass98vvtk3xh5kcwcmaf
+      - NEXT_PUBLIC_ACCOUNT_ID=account_31crr1tcp2bmcv1fk6pcm0k6ag
     depends_on:
       - django
     networks:
