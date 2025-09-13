@@ -61,7 +61,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
   return (
     <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-x-4 mb-6">
         <h2 className="text-xl font-semibold text-green-600">Navigation Minimap</h2>
         <div className="flex items-center space-x-3">
           <span className="text-sm text-gray-600">Show bids</span>
