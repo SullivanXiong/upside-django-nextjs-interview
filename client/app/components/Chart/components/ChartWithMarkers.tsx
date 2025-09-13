@@ -54,7 +54,7 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
         options={chartOptions}
       />
       
-      {/* Custom markers overlay - positioned below chart line, above dates */}
+      {/* Custom markers overlay - positioned with clean spacing */}
       <div className="absolute inset-0 pointer-events-none">
         {data.markers.map((marker, index) => {
           const dataIndex = data.labels.indexOf(marker.month);
@@ -62,9 +62,11 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
 
           // Calculate position based on chart dimensions
           const xPercent = (dataIndex / (data.labels.length - 1)) * 100;
-          // Position markers below the chart line but above the date labels
-          // This places them in the bottom 20% of the chart area
-          const yPercent = 85; // Positioned below the chart line
+          // Position markers with clean spacing:
+          // - Chart line is roughly at 60% of chart height
+          // - Markers at 75% (clean gap below line)
+          // - Date labels at 90% (clean gap below markers)
+          const yPercent = 75;
 
           return (
             <div
