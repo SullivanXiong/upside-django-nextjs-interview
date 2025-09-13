@@ -2,18 +2,20 @@
 
 import React from 'react';
 import TableHeader from './TableHeader';
+import TableRow from './TableRow';
+import TableData from './TableData';
+import TypeCell from './TypeCell';
+import PeopleCell from './PeopleCell';
+import ChannelCell from './ChannelCell';
+import StatusCell from './StatusCell';
+import TeamCell from './TeamCell';
 import { 
   CalendarIcon, 
   ChartIcon, 
   PeopleIcon, 
   HashIcon, 
   StarIcon, 
-  RefreshIcon,
-  ConversationIcon,
-  QuestionIcon,
-  SendIcon,
-  ArrowRightIcon,
-  ArrowLeftIcon
+  RefreshIcon
 } from '../Icons';
 
 interface TableProps {
@@ -99,40 +101,6 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
     }
   ];
 
-  const getChannelColor = (color: string) => {
-    const colors = {
-      purple: 'bg-purple-500',
-      gray: 'bg-gray-500',
-      yellow: 'bg-yellow-500',
-      blue: 'bg-blue-500'
-    };
-    return colors[color as keyof typeof colors] || 'bg-gray-500';
-  };
-
-  const getTeamColor = (color: string) => {
-    const colors = {
-      gray: 'bg-gray-200 text-gray-700',
-      red: 'bg-red-500 text-white',
-      blue: 'bg-blue-500 text-white',
-      green: 'bg-green-200 text-green-800'
-    };
-    return colors[color as keyof typeof colors] || 'bg-gray-200 text-gray-700';
-  };
-
-  const getStatusIcon = (icon: string) => {
-    switch (icon) {
-      case 'conversation':
-        return <ConversationIcon className="w-4 h-4" />;
-      case 'booked':
-      case 'chatted':
-      case 'replied':
-        return <QuestionIcon className="w-4 h-4" />;
-      case 'sent':
-        return <SendIcon className="w-4 h-4" />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
@@ -191,53 +159,41 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {touchpoints.map((touchpoint, index) => (
-              <tr key={touchpoint.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
-                    {touchpoint.type === 'outgoing' ? (
-                      <ArrowRightIcon className="w-4 h-4 text-blue-600" />
-                    ) : (
-                      <ArrowLeftIcon className="w-4 h-4 text-pink-600" />
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">{touchpoint.date}</td>
-                <td className="px-6 py-4 text-sm text-gray-900">{touchpoint.activity}</td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  <div className="flex items-center space-x-1">
-                    <span>{touchpoint.people}</span>
-                    {touchpoint.additionalPeople && (
-                      <span className="text-blue-500 text-xs">+{touchpoint.additionalPeople}</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${getChannelColor(touchpoint.channel.color)}`}></div>
-                    <span className="text-sm text-gray-900">{touchpoint.channel.name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="text-gray-600">
-                      {getStatusIcon(touchpoint.status.icon)}
-                    </div>
-                    <span className="text-sm text-gray-900">{touchpoint.status.text}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center space-x-1">
-                    {touchpoint.team.labels.map((label, labelIndex) => (
-                      <span
-                        key={labelIndex}
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${getTeamColor(touchpoint.team.colors[labelIndex])}`}
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-              </tr>
+              <TableRow key={touchpoint.id} isEven={index % 2 === 0}>
+                <TableData>
+                  <TypeCell type={touchpoint.type} />
+                </TableData>
+                <TableData>
+                  <span className="text-sm text-gray-900">{touchpoint.date}</span>
+                </TableData>
+                <TableData>
+                  <span className="text-sm text-gray-900">{touchpoint.activity}</span>
+                </TableData>
+                <TableData>
+                  <PeopleCell 
+                    name={touchpoint.people} 
+                    additionalCount={touchpoint.additionalPeople} 
+                  />
+                </TableData>
+                <TableData>
+                  <ChannelCell 
+                    name={touchpoint.channel.name} 
+                    color={touchpoint.channel.color} 
+                  />
+                </TableData>
+                <TableData>
+                  <StatusCell 
+                    text={touchpoint.status.text} 
+                    icon={touchpoint.status.icon} 
+                  />
+                </TableData>
+                <TableData>
+                  <TeamCell 
+                    labels={touchpoint.team.labels} 
+                    colors={touchpoint.team.colors} 
+                  />
+                </TableData>
+              </TableRow>
             ))}
           </tbody>
         </table>
