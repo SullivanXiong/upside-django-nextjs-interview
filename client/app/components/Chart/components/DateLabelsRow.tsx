@@ -20,7 +20,7 @@ const DateLabelsRow: React.FC<DateLabelsRowProps> = ({
             flex: 1,
           }}
         >
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-muted-foreground">
             {label}
           </span>
         </div>

@@ -33,10 +33,10 @@ const generateSampleData = (): ChartData => {
       {
         label: 'Activity Events',
         data,
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        pointBackgroundColor: 'rgb(34, 197, 94)',
-        pointBorderColor: 'rgb(34, 197, 94)',
+        borderColor: 'oklch(0.646 0.222 264.376)',
+        backgroundColor: 'color-mix(in oklab, var(--chart-1) 20%, transparent)',
+        pointBackgroundColor: 'oklch(0.646 0.222 264.376)',
+        pointBorderColor: 'oklch(0.646 0.222 264.376)',
         pointRadius: 4,
         pointHoverRadius: 6,
         tension: 0.4,
@@ -127,10 +127,10 @@ const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartC
         {
           label: 'Daily Activity Events',
           data,
-          borderColor: 'rgb(34, 197, 94)',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          pointBackgroundColor: 'rgb(34, 197, 94)',
-          pointBorderColor: 'rgb(34, 197, 94)',
+          borderColor: 'oklch(0.646 0.222 264.376)',
+          backgroundColor: 'color-mix(in oklab, var(--chart-1) 20%, transparent)',
+          pointBackgroundColor: 'oklch(0.646 0.222 264.376)',
+          pointBorderColor: 'oklch(0.646 0.222 264.376)',
           pointRadius: 2,
           pointHoverRadius: 5,
           tension: 0.1,
@@ -186,13 +186,13 @@ const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartC
       
       {/* Show loading/error indicators as overlays if needed */}
       {isLoading && (
-        <div className="text-center text-sm text-gray-500 mt-2">
+        <div className="text-center text-sm text-muted-foreground mt-2">
           Loading live data...
         </div>
       )}
       
       {hasError && !isLoading && (
-        <div className="text-center text-sm text-orange-500 mt-2">
+        <div className="text-center text-sm text-destructive mt-2">
           Using sample data (API unavailable)
         </div>
       )}

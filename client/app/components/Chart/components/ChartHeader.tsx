@@ -19,9 +19,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   return (
     <div className={`flex items-center justify-between mb-6 ${className}`}>
       <div className="flex items-center space-x-2">
-        <h2 className="text-xl font-semibold text-green-600">{title}</h2>
+        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
         {subtitle && (
-          <span className="text-sm text-gray-500">[{subtitle}]</span>
+          <span className="text-sm text-muted-foreground">[{subtitle}]</span>
         )}
       </div>
       <ChartControls 

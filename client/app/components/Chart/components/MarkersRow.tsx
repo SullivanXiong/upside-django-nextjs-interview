@@ -29,8 +29,8 @@ const MarkersRow: React.FC<MarkersRowProps> = ({
               flex: 1,
             }}
           >
-            <div className="w-4 h-4 bg-white border-2 border-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-xs font-medium text-blue-600">
+            <div className="w-4 h-4 bg-card border-2 border-primary rounded-full flex items-center justify-center">
+              <span className="text-xs font-medium text-primary">
                 {marker.label}
               </span>
             </div>

@@ -33,10 +33,10 @@ const StatusCell: React.FC<StatusCellProps> = ({
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      <div className="text-gray-600">
+      <div className="text-muted-foreground">
         {getStatusIcon(icon)}
       </div>
-      <span className="text-sm text-gray-900">{text}</span>
+      <span className="text-sm text-foreground">{text}</span>
     </div>
   );
 };

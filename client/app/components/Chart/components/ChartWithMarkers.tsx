@@ -29,15 +29,23 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
     
     // Add click handler to the chart
     if (onPointClick) {
-      options.onClick = (event: any, elements: any[]) => {
-        if (elements.length > 0) {
+      (options as any).onClick = (event: any, elements: any[]) => {
+        // Use nearestX if no element is under the pointer so clicks between points still work
+        const scale = (chartRef.current as any)?.scales?.x;
+        if ((!elements || elements.length === 0) && scale) {
+          const x = (event.native?.offsetX ?? event.x) as number;
+          const index = scale.getValueForPixel ? scale.getValueForPixel(x) : undefined;
+          if (typeof index === 'number') onPointClick(index);
+          return;
+        }
+        if (elements && elements.length > 0) {
           const index = elements[0].index;
           onPointClick(index);
         }
       };
       
       // Make cursor pointer on hover over data points
-      options.onHover = (event: any, elements: any[]) => {
+      (options as any).onHover = (event: any, elements: any[]) => {
         const canvas = chartRef.current?.canvas;
         if (canvas) {
           canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default';
@@ -52,8 +60,8 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
   if (!data.labels || data.labels.length === 0 || !data.datasets || data.datasets.length === 0) {
     console.warn('Invalid chart data structure');
     return (
-      <div className={`${className} flex items-center justify-center h-44 bg-gray-50 rounded-lg`}>
-        <p className="text-gray-500">No chart data available</p>
+      <div className={`${className} flex items-center justify-center h-44 bg-muted rounded-lg`}>
+        <p className="text-muted-foreground">No chart data available</p>
       </div>
     );
   }
@@ -109,11 +117,22 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
     if (startIndex === -1 && endIndex === -1) return null;
 
     const totalLabels = data.labels.length;
-    const startPosition = startIndex >= 0 ? (startIndex / (totalLabels - 1)) * 100 : null;
-    const endPosition = endIndex >= 0 ? (endIndex / (totalLabels - 1)) * 100 : null;
+    const startRatio = startIndex >= 0 ? startIndex / Math.max(1, (totalLabels - 1)) : null;
+    const endRatio = endIndex >= 0 ? endIndex / Math.max(1, (totalLabels - 1)) : null;
 
+    const chartArea: any = (chartRef.current as any)?.chartArea;
+    if (chartArea && startRatio !== null) {
+      const areaWidth = chartArea.right - chartArea.left;
+      const startX = chartArea.left + areaWidth * startRatio;
+      const endX = endRatio !== null ? (chartArea.left + areaWidth * endRatio) : null;
+      return { startX, endX };
+    }
+
+    // Fallback to percentage-based positioning if chartArea not ready
+    const startPosition = startRatio !== null ? startRatio * 100 : null;
+    const endPosition = endRatio !== null ? endRatio * 100 : null;
     return { startPosition, endPosition };
-  }, [data.labels, paginationRange]);
+  }, [data.labels, paginationRange, chartRef.current]);
 
   return (
     <div className={className}>
@@ -131,35 +150,49 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
         {/* Pagination Range Indicators */}
         {rangeIndicators && (
           <>
-            {rangeIndicators.startPosition !== null && (
+            {('startX' in rangeIndicators ? (rangeIndicators as any).startX !== null : (rangeIndicators as any).startPosition !== null) && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 opacity-60"
-                style={{ left: `${rangeIndicators.startPosition}%` }}
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60 pointer-events-none"
+                style={ 'startX' in rangeIndicators
+                  ? { left: `${(rangeIndicators as any).startX}px` }
+                  : { left: `${(rangeIndicators as any).startPosition}%` } }
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
                   Page Start
                 </div>
               </div>
             )}
-            {rangeIndicators.endPosition !== null && (
+            {('endX' in rangeIndicators ? (rangeIndicators as any).endX !== null : (rangeIndicators as any).endPosition !== null) && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 opacity-60"
-                style={{ left: `${rangeIndicators.endPosition}%` }}
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60 pointer-events-none"
+                style={ 'endX' in rangeIndicators
+                  ? { left: `${(rangeIndicators as any).endX}px` }
+                  : { left: `${(rangeIndicators as any).endPosition}%` } }
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
                   Page End
                 </div>
               </div>
             )}
             {/* Highlight the range between start and end */}
-            {rangeIndicators.startPosition !== null && rangeIndicators.endPosition !== null && (
+            {('startX' in rangeIndicators && 'endX' in rangeIndicators && (rangeIndicators as any).startX !== null && (rangeIndicators as any).endX !== null) ? (
               <div
-                className="absolute top-0 bottom-0 bg-red-500 opacity-10"
+                className="absolute top-0 bottom-0 bg-primary opacity-10 pointer-events-none"
                 style={{
-                  left: `${rangeIndicators.startPosition}%`,
-                  width: `${rangeIndicators.endPosition - rangeIndicators.startPosition}%`
+                  left: `${(rangeIndicators as any).startX}px`,
+                  width: `${(rangeIndicators as any).endX - (rangeIndicators as any).startX}px`
                 }}
               />
+            ) : (
+              ('startPosition' in rangeIndicators && 'endPosition' in rangeIndicators && (rangeIndicators as any).startPosition !== null && (rangeIndicators as any).endPosition !== null) && (
+                <div
+                  className="absolute top-0 bottom-0 bg-primary opacity-10 pointer-events-none"
+                  style={{
+                    left: `${(rangeIndicators as any).startPosition}%`,
+                    width: `${(rangeIndicators as any).endPosition - (rangeIndicators as any).startPosition}%`
+                  }}
+                />
+              )
             )}
           </>
         )}

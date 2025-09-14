@@ -24,7 +24,7 @@ const ChannelCell: React.FC<ChannelCellProps> = ({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <div className={`w-2 h-2 rounded-full ${getChannelColor(color)}`}></div>
-      <span className="text-sm text-gray-900">{name}</span>
+      <span className="text-sm text-foreground">{name}</span>
     </div>
   );
 };

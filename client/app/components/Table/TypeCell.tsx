@@ -8,11 +8,11 @@ interface TypeCellProps {
 
 const TypeCell: React.FC<TypeCellProps> = ({ type, className = '' }) => {
   return (
-    <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${className}`}>
+    <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-muted ${className}`}>
       {type === 'outgoing' ? (
-        <ArrowRightIcon className="w-4 h-4 text-blue-600" />
+        <ArrowRightIcon className="w-4 h-4 text-primary" />
       ) : (
-        <ArrowLeftIcon className="w-4 h-4 text-pink-600" />
+        <ArrowLeftIcon className="w-4 h-4 text-destructive" />
       )}
     </div>
   );
