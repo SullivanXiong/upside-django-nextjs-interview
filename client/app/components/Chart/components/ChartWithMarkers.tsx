@@ -133,20 +133,20 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
           <>
             {rangeIndicators.startPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-destructive opacity-60"
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60"
                 style={{ left: `${rangeIndicators.startPosition}%` }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
                   Page Start
                 </div>
               </div>
             )}
             {rangeIndicators.endPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-destructive opacity-60"
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60"
                 style={{ left: `${rangeIndicators.endPosition}%` }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
                   Page End
                 </div>
               </div>
@@ -154,7 +154,7 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
             {/* Highlight the range between start and end */}
             {rangeIndicators.startPosition !== null && rangeIndicators.endPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 bg-destructive opacity-10"
+                className="absolute top-0 bottom-0 bg-primary opacity-10"
                 style={{
                   left: `${rangeIndicators.startPosition}%`,
                   width: `${rangeIndicators.endPosition - rangeIndicators.startPosition}%`

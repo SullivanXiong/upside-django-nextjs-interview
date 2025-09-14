@@ -70,10 +70,10 @@ export const defaultChartData: ChartData = {
     {
       label: 'Navigation Data',
       data: [20, 35, 25, 45, 30, 55, 40, 60, 35, 50, 45, 70],
-      borderColor: 'oklch(0.646 0.222 41.116)',
+      borderColor: 'oklch(0.646 0.222 264.376)',
       backgroundColor: 'color-mix(in oklab, var(--chart-1) 20%, transparent)',
-      pointBackgroundColor: 'oklch(0.646 0.222 41.116)',
-      pointBorderColor: 'oklch(0.646 0.222 41.116)',
+      pointBackgroundColor: 'oklch(0.646 0.222 264.376)',
+      pointBorderColor: 'oklch(0.646 0.222 264.376)',
       pointRadius: 4,
       pointHoverRadius: 6,
       tension: 0.4,
