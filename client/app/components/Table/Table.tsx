@@ -49,7 +49,8 @@ interface TouchpointData {
 
 const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, targetDate }) => {
   const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(50); // Default to 50
+  const pageSizeOptions = [10, 25, 50, 100];
   
   // Fetch paginated data from API - sort by ascending date (oldest first)
   const { 
@@ -193,6 +194,11 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
     refetchEvents();
   };
   
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPage(1); // Reset to first page when changing page size
+  };
+  
   // Sample data as fallback
   const sampleTouchpoints: TouchpointData[] = [
     {
@@ -252,6 +258,9 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   
   // Use sample data if no real data is available
   const displayData = touchpoints.length > 0 ? touchpoints : sampleTouchpoints;
+  
+  // Calculate if scrolling is needed
+  const needsScroll = displayData.length > 10;
 
   return (
     <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
@@ -286,9 +295,15 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
       
       {/* Table */}
       {!isLoading && !hasError && (
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
+      <div className="relative">
+        {needsScroll && (
+          <div className="absolute right-4 top-2 z-20 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
+            ↕ Scroll for more
+          </div>
+        )}
+        <div className="overflow-auto max-h-[600px] relative border-t border-gray-200 scroll-smooth">
+          <table className="w-full">
+          <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="px-6 py-3 text-left">
                 <button className="text-gray-400 hover:text-gray-600">
@@ -367,21 +382,41 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
             ))}
           </tbody>
         </table>
+        </div>
       </div>
       )}
 
       {/* Pagination Controls */}
-      {!isLoading && !hasError && totalPages > 1 && (
+      {!isLoading && !hasError && (
       <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </span>
-          <span className="text-sm text-gray-500">
-            ({totalCount} total items)
-          </span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <span className="text-sm text-gray-500">
+              ({totalCount} total items)
+            </span>
+          </div>
+          
+          {/* Page Size Selector */}
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-gray-700">Show:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              {pageSizeOptions.map(size => (
+                <option key={size} value={size}>
+                  {size} rows
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         
+        {totalPages > 1 && (
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setPage(currentPage - 1)}
@@ -429,6 +464,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
             Next
           </button>
         </div>
+        )}
       </div>
       )}
     </div>
