@@ -13,10 +13,10 @@ const TeamCell: React.FC<TeamCellProps> = ({
 }) => {
   const getTeamColor = (color: string) => {
     const colorMap = {
-      gray: 'bg-gray-200 text-gray-700',
-      red: 'bg-red-500 text-white',
-      blue: 'bg-blue-500 text-white',
-      green: 'bg-green-200 text-green-800'
+      gray: 'bg-muted text-foreground',
+      red: 'bg-destructive text-destructive-foreground',
+      blue: 'bg-primary text-primary-foreground',
+      green: 'bg-secondary text-secondary-foreground'
     };
     return colorMap[color as keyof typeof colorMap] || 'bg-gray-200 text-gray-700';
   };

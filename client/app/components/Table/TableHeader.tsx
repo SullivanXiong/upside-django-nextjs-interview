@@ -17,13 +17,13 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   return (
     <th className={`px-6 py-3 text-left ${className}`}>
       <div className="flex items-center space-x-2">
-        <div className="text-gray-400">
+        <div className="text-muted-foreground">
           {icon}
         </div>
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
         <button 
           onClick={onFilter}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-muted-foreground hover:text-foreground"
         >
           <FilterIcon />
         </button>

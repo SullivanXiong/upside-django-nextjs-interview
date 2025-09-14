@@ -10,7 +10,7 @@ const ChartContainer: React.FC<ChartContainerProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
+    <div className={`bg-card text-card-foreground rounded-lg border border-border p-6 ${className}`}>
       {children}
     </div>
   );

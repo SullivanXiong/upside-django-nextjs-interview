@@ -12,11 +12,11 @@ const PeopleCell: React.FC<PeopleCellProps> = ({
   className = '' 
 }) => {
   return (
-    <div className={`text-sm text-gray-900 ${className}`}>
+    <div className={`text-sm text-foreground ${className}`}>
       <div className="flex items-center space-x-1">
         <span>{name}</span>
         {additionalCount && additionalCount > 0 && (
-          <span className="text-blue-500 text-xs">+{additionalCount}</span>
+          <span className="text-primary text-xs">+{additionalCount}</span>
         )}
       </div>
     </div>

@@ -90,8 +90,13 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
       
       // Get the overall date range
       if (eventsData.date_range?.overall) {
-        const overallStart = new Date(eventsData.date_range.overall.start).getTime();
-        const overallEnd = new Date(eventsData.date_range.overall.end).getTime();
+        const overallStartStr = eventsData.date_range.overall.start;
+        const overallEndStr = eventsData.date_range.overall.end;
+        if (!overallStartStr || !overallEndStr) {
+          return;
+        }
+        const overallStart = new Date(overallStartStr).getTime();
+        const overallEnd = new Date(overallEndStr).getTime();
         
         // Check if target date is within the data range
         if (targetTime < overallStart || targetTime > overallEnd) {
@@ -263,15 +268,15 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   const needsScroll = displayData.length > 10;
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+    <div className={`bg-card text-card-foreground rounded-lg border border-border ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="flex items-center justify-between p-6 border-b border-border">
         <div className="flex items-center space-x-2">
           <h2 className="text-xl font-semibold text-green-600">Touchpoints</h2>
-          <span className="text-sm text-gray-500">[{totalCount} total]</span>
+          <span className="text-sm text-muted-foreground">[{totalCount} total]</span>
         </div>
         <button 
-          className="text-gray-400 hover:text-gray-600 p-2 transition-colors"
+          className="text-muted-foreground hover:text-foreground p-2 transition-colors"
           onClick={handleRefresh}
           disabled={isLoading}
         >
@@ -282,7 +287,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">Loading touchpoints...</div>
+          <div className="text-muted-foreground">Loading touchpoints...</div>
         </div>
       )}
       
@@ -297,16 +302,16 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
       {!isLoading && !hasError && (
       <div className="relative">
         {needsScroll && (
-          <div className="absolute right-4 top-2 z-20 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
+          <div className="absolute right-4 top-2 z-20 text-xs text-muted-foreground bg-card px-2 py-1 rounded shadow-sm">
             ↕ Scroll for more
           </div>
         )}
-        <div className="overflow-auto max-h-[600px] relative border-t border-gray-200 scroll-smooth">
+        <div className="overflow-auto max-h-[600px] relative border-t border-border scroll-smooth">
           <table className="w-full">
-          <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+          <thead className="bg-muted sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="px-6 py-3 text-left">
-                <button className="text-gray-400 hover:text-gray-600">
+                <button className="text-muted-foreground hover:text-foreground">
                   <HashIcon />
                 </button>
               </th>
@@ -342,17 +347,17 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
               />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {displayData.map((touchpoint, index) => (
               <TableRow key={touchpoint.id} isEven={index % 2 === 0}>
                 <TableData>
                   <TypeCell type={touchpoint.type} />
                 </TableData>
                 <TableData>
-                  <span className="text-sm text-gray-900">{touchpoint.date}</span>
+                  <span className="text-sm text-foreground">{touchpoint.date}</span>
                 </TableData>
                 <TableData>
-                  <span className="text-sm text-gray-900">{touchpoint.activity}</span>
+                  <span className="text-sm text-foreground">{touchpoint.activity}</span>
                 </TableData>
                 <TableData>
                   <PeopleCell 
@@ -388,24 +393,24 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
 
       {/* Pagination Controls */}
       {!isLoading && !hasError && (
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-foreground">
               Page {currentPage} of {totalPages}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               ({totalCount} total items)
             </span>
           </div>
           
           {/* Page Size Selector */}
           <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-700">Page Size:</label>
+            <label className="text-sm text-foreground">Page Size:</label>
             <select
 				  value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-3 py-1 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card text-foreground"
             >
               {pageSizeOptions.map(size => (
                 <option key={size} value={size}>
@@ -421,7 +426,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
           <button
             onClick={() => setPage(currentPage - 1)}
             disabled={!hasPrevious}
-            className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
@@ -446,8 +451,8 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
                   onClick={() => setPage(pageNum)}
                   className={`px-3 py-1 text-sm font-medium rounded-md ${
                     currentPage === pageNum
-                      ? 'bg-green-600 text-white'
-                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground bg-card border border-border hover:bg-muted'
                   }`}
                 >
                   {pageNum}
@@ -459,7 +464,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
           <button
             onClick={() => setPage(currentPage + 1)}
             disabled={!hasNext}
-            className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

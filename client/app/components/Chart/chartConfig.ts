@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  type ChartOptions,
 } from 'chart.js';
 
 // Register Chart.js components
@@ -69,10 +70,10 @@ export const defaultChartData: ChartData = {
     {
       label: 'Navigation Data',
       data: [20, 35, 25, 45, 30, 55, 40, 60, 35, 50, 45, 70],
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      pointBackgroundColor: '#3b82f6',
-      pointBorderColor: '#3b82f6',
+      borderColor: 'oklch(0.646 0.222 41.116)',
+      backgroundColor: 'color-mix(in oklab, var(--chart-1) 20%, transparent)',
+      pointBackgroundColor: 'oklch(0.646 0.222 41.116)',
+      pointBorderColor: 'oklch(0.646 0.222 41.116)',
       pointRadius: 4,
       pointHoverRadius: 6,
       tension: 0.4,
@@ -95,7 +96,7 @@ export const defaultChartData: ChartData = {
   ]
 };
 
-export const createChartOptions = () => ({
+export const createChartOptions = (): ChartOptions<'line'> => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -104,10 +105,10 @@ export const createChartOptions = () => ({
     },
     tooltip: {
       enabled: true,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      titleColor: 'white',
-      bodyColor: 'white',
-      borderColor: '#3b82f6',
+      backgroundColor: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--popover'),
+      titleColor: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground'),
+      bodyColor: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--popover-foreground'),
+      borderColor: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--primary'),
       borderWidth: 1,
       callbacks: {
         title: function(context: any) {
@@ -129,38 +130,30 @@ export const createChartOptions = () => ({
       display: true,
       grid: {
         display: true,
-        color: '#f3f4f6',
-        drawBorder: false,
+        color: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--border'),
       },
       ticks: {
-        color: '#6b7280',
+        color: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground'),
         font: {
           size: 12,
         },
         maxRotation: 0,
         autoSkip: false,
         // Show month labels at regular intervals
-        callback: function(value: any, index: number, ticks: any) {
-          const label = this.getLabelForValue(value);
-          const date = new Date(label);
-          
+        callback: function(this: any, value: number | string, index: number, ticks: any[]): string {
+          const rawLabel = (this as any).getLabelForValue(value) as string;
+          const date = new Date(rawLabel);
           if (isNaN(date.getTime())) return '';
-          
-          const totalPoints = ticks.length;
-          const month = date.getMonth();
-          const year = date.getFullYear();
-          
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          
+          const totalPoints: number = ticks.length;
+          const month: number = date.getMonth();
+          const year: number = date.getFullYear();
+          const monthNames: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           // Always show first and last labels
           if (index === 0 || index === totalPoints - 1) {
             return `${monthNames[month]} ${year}`;
           }
-          
           // Calculate interval for approximately every 90 days (3 months)
-          const interval = Math.floor(totalPoints / Math.ceil(totalPoints / 90));
-          
+          const interval: number = Math.floor(totalPoints / Math.ceil(totalPoints / 90));
           // Show labels at regular intervals
           if (interval > 0 && index % interval === 0) {
             // Add year for January or if it's been a while
@@ -169,7 +162,6 @@ export const createChartOptions = () => ({
             }
             return monthNames[month];
           }
-          
           return '';
         },
       },
@@ -178,14 +170,16 @@ export const createChartOptions = () => ({
       display: false,
       grid: {
         display: true,
-        color: '#f3f4f6',
-        drawBorder: false,
+        color: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--border'),
       },
     },
   },
   elements: {
     point: {
-      hoverBackgroundColor: '#3b82f6',
+      hoverBackgroundColor: (ctx: any) => getComputedStyle(document.documentElement).getPropertyValue('--primary'),
+    },
+    line: {
+      borderWidth: 2,
     },
   },
   interaction: {

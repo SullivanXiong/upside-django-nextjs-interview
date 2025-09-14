@@ -12,7 +12,7 @@ const TableRow: React.FC<TableRowProps> = ({
   className = '' 
 }) => {
   return (
-    <tr className={`${isEven ? 'bg-white' : 'bg-gray-50'} ${className}`}>
+    <tr className={`${isEven ? 'bg-card' : 'bg-muted'} ${className}`}>
       {children}
     </tr>
   );
