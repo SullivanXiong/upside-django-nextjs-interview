@@ -17,7 +17,7 @@ import {
   StarIcon, 
   RefreshIcon
 } from '../Icons';
-import { usePaginatedEvents, usePeople, useDashboardStats } from '@/lib/hooks';
+import { usePaginatedEvents, usePeople, useDashboardStats, useAllEventsForChart } from '@/lib/hooks';
 import { ActivityEvent, Person } from '@/lib/api/types';
 
 interface TableProps {
@@ -66,6 +66,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   });
   const { data: peopleData, loading: peopleLoading, error: peopleError } = usePeople();
   const { data: statsData } = useDashboardStats();
+  const { data: chartAllData } = useAllEventsForChart();
   
   // Notify parent about page date range changes
   useEffect(() => {
@@ -77,63 +78,34 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   
   // Stepwise navigation using date-only string comparisons to avoid timezone drift
   const getDateOnly = (v?: string | null) => (v ? (v.includes('T') ? v.split('T')[0] : v) : null);
-  const isWithin = (d: string, start?: string | null, end?: string | null) => {
-    const sd = getDateOnly(start);
-    const ed = getDateOnly(end);
-    if (!sd || !ed) return false;
-    return d >= sd && d <= ed;
-  };
 
-  const navStateRef = React.useRef<{
-    target: string;
-    direction: 'forward' | 'backward';
-    remaining: number;
-  } | null>(null);
-
+  // Exact page mapping using daily_counts from the chart API (no loops)
   useEffect(() => {
-    if (!targetDate || !eventsData) return;
-    const d = getDateOnly(targetDate);
-    if (!d) return;
-
-    const range = eventsData.date_range?.current_page;
-    if (range && isWithin(d, range.start, range.end)) {
-      navStateRef.current = null;
-      return;
-    }
-
-    const overall = eventsData.date_range?.overall;
-    if (!overall?.start || !overall?.end) return;
+    if (!targetDate || !eventsData || !chartAllData?.daily_counts) return;
+    const target = getDateOnly(targetDate);
+    if (!target) return;
 
     const totalPages = eventsData.pagination?.total_pages || 1;
     if (totalPages <= 1) return;
 
-    const dir: 'forward' | 'backward' = d > getDateOnly(range?.end || overall.start)! ? 'forward' : 'backward';
-    navStateRef.current = { target: d, direction: dir, remaining: 20 };
+    const pageSizeLocal = pageSize;
+    const sorted = [...chartAllData.daily_counts].sort((a, b) => a.date.localeCompare(b.date));
 
-    if (dir === 'forward' && eventsData.pagination.has_next) setPage(currentPage + 1);
-    else if (dir === 'backward' && eventsData.pagination.has_previous) setPage(currentPage - 1);
-  }, [targetDate, eventsData, currentPage, setPage]);
-
-  useEffect(() => {
-    const st = navStateRef.current;
-    if (!st || !eventsData) return;
-    if (st.remaining <= 0) { navStateRef.current = null; return; }
-
-    const range = eventsData.date_range?.current_page;
-    if (range && isWithin(st.target, range.start, range.end)) { navStateRef.current = null; return; }
-
-    const canForward = eventsData.pagination?.has_next;
-    const canBack = eventsData.pagination?.has_previous;
-    if (st.direction === 'forward' && canForward) {
-      st.remaining -= 1;
-      setPage(currentPage + 1);
-    } else if (st.direction === 'backward' && canBack) {
-      st.remaining -= 1;
-      setPage(currentPage - 1);
-    } else {
-      navStateRef.current = null;
+    let eventsBefore = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const day = sorted[i];
+      if (day.date < target) {
+        eventsBefore += day.count;
+      } else {
+        break;
+      }
     }
-  }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, currentPage, setPage, eventsData]);
+
+    const estimatedPage = Math.max(1, Math.min(totalPages, Math.floor(eventsBefore / pageSizeLocal) + 1));
+    if (estimatedPage !== currentPage) {
+      setPage(estimatedPage);
+    }
+  }, [targetDate, chartAllData?.daily_counts, eventsData?.pagination?.total_pages, pageSize, currentPage, setPage]);
   
   // Transform API data to table format
   useEffect(() => {
