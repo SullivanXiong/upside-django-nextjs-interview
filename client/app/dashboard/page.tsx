@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Chart } from '@/components/Chart';
 import { Table } from '@/components/Table';
 import ModeToggle from '@/components/darkmode-toggle/darkmode-toggle';
@@ -14,9 +14,9 @@ export default function Dashboard() {
   const [targetDate, setTargetDate] = useState<string | null>(null);
   const tableRef = useRef<any>(null);
 
-  const handlePageDateRangeChange = (start: string | null, end: string | null) => {
+  const handlePageDateRangeChange = useCallback((start: string | null, end: string | null) => {
     setPaginationRange({ start, end });
-  };
+  }, []);
   
   const handleChartClick = (date: string) => {
     // Set the target date to navigate the table to

@@ -69,13 +69,11 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   
   // Notify parent about page date range changes
   useEffect(() => {
-    if (eventsData?.date_range?.current_page && onPageDateRangeChange) {
-      onPageDateRangeChange(
-        eventsData.date_range.current_page.start,
-        eventsData.date_range.current_page.end
-      );
-    }
-  }, [eventsData?.date_range?.current_page, onPageDateRangeChange]);
+    if (!onPageDateRangeChange) return;
+    const range = eventsData?.date_range?.current_page;
+    if (!range) return;
+    onPageDateRangeChange(range.start, range.end);
+  }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, onPageDateRangeChange]);
   
   // Handle navigation when chart is clicked
   useEffect(() => {
@@ -129,7 +127,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
     };
     
     navigateToDate();
-  }, [targetDate]); // Remove dependencies that would cause infinite loops
+  }, [targetDate, eventsData, currentPage, setPage]);
   
   // Transform API data to table format
   useEffect(() => {
