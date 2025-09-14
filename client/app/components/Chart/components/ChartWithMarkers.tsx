@@ -15,6 +15,16 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
   className = '' 
 }) => {
   const chartRef = useRef<ChartJS<'line'>>(null);
+  
+  // Ensure we have valid data
+  if (!data.labels || data.labels.length === 0 || !data.datasets || data.datasets.length === 0) {
+    console.warn('Invalid chart data structure');
+    return (
+      <div className={`${className} flex items-center justify-center h-44 bg-gray-50 rounded-lg`}>
+        <p className="text-gray-500">No chart data available</p>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>

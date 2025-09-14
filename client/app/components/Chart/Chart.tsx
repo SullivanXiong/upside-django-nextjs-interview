@@ -9,16 +9,53 @@ interface ChartProps {
   className?: string;
 }
 
+// Generate sample data function
+const generateSampleData = (): ChartData => {
+  const labels = [];
+  const data = [];
+  const today = new Date();
+  
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    data.push(Math.floor(Math.random() * 50) + 10);
+  }
+  
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Activity Events',
+        data,
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        pointBackgroundColor: 'rgb(34, 197, 94)',
+        pointBorderColor: 'rgb(34, 197, 94)',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.4,
+        fill: true,
+      }
+    ],
+    markers: []
+  };
+};
+
 const Chart: React.FC<ChartProps> = ({ className = '' }) => {
   const [showBids, setShowBids] = useState(false);
-  const [chartData, setChartData] = useState<ChartData>(defaultChartData);
+  // Initialize with sample data
+  const [chartData, setChartData] = useState<ChartData>(generateSampleData());
   
   // Fetch real data from API
   const { data: timelineData, loading: timelineLoading, error: timelineError } = useActivityTimeline();
   const { data: statsData, loading: statsLoading, error: statsError } = useDashboardStats();
 
   useEffect(() => {
+    // Only update if we have real data from API
     if (timelineData && timelineData.timeline && timelineData.timeline.length > 0) {
+      console.log('Using API timeline data:', timelineData.timeline);
+      
       // Transform API data to chart format
       const labels = timelineData.timeline.map(item => {
         const date = new Date(item.day);
@@ -27,27 +64,11 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
       
       const data = timelineData.timeline.map(item => item.count);
       
-      // Generate markers for significant data points
-      const markers = timelineData.timeline
-        .filter((item, index) => {
-          // Show markers for every 3rd data point or significant changes
-          return index % 3 === 0 || (index > 0 && Math.abs(item.count - timelineData.timeline[index - 1].count) > 5);
-        })
-        .map((item, index) => {
-          const date = new Date(item.day);
-          const label = item.count > 10 ? `+${item.count}` : item.count.toString();
-          return {
-            month: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            label: label,
-            position: item.count
-          };
-        });
-      
       const transformedData: ChartData = {
         labels,
         datasets: [
           {
-            label: 'Activity Events',
+            label: 'Activity Events (Live Data)',
             data,
             borderColor: 'rgb(34, 197, 94)',
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -59,17 +80,21 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
             fill: true,
           }
         ],
-        markers: markers.length > 0 ? markers : []
+        markers: []
       };
+      
+      console.log('Setting chart data from API:', transformedData);
       setChartData(transformedData);
-    } else if (!timelineLoading && !timelineData) {
-      // If no data is available, keep using default chart data
-      console.log('No timeline data available, using default chart data');
+    } else {
+      console.log('Using sample data - API returned:', timelineData);
     }
-  }, [timelineData, timelineLoading]);
+  }, [timelineData]);
 
   const isLoading = timelineLoading || statsLoading;
   const hasError = timelineError || statsError;
+  const subtitle = statsData ? `${statsData.total_events} total events` : 
+                   timelineData ? `${timelineData.timeline?.length || 0} data points` : 
+                   'Sample data';
 
   return (
     <ChartContainer className={className}>
@@ -77,23 +102,23 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
         title="Activity Timeline"
         showBids={showBids}
         onToggleBids={setShowBids}
-        subtitle={statsData ? `${statsData.total_events} total events` : undefined}
+        subtitle={subtitle}
       />
       
+      {/* Always show the chart with either real or sample data */}
+      <ChartWithMarkers data={chartData} />
+      
+      {/* Show loading/error indicators as overlays if needed */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading chart data...</div>
+        <div className="text-center text-sm text-gray-500 mt-2">
+          Loading live data...
         </div>
       )}
       
-      {hasError && (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-red-500">Error loading chart data</div>
+      {hasError && !isLoading && (
+        <div className="text-center text-sm text-orange-500 mt-2">
+          Using sample data (API unavailable)
         </div>
-      )}
-      
-      {!isLoading && !hasError && (
-        <ChartWithMarkers data={chartData} />
       )}
     </ChartContainer>
   );
