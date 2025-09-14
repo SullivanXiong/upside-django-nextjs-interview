@@ -111,9 +111,12 @@ export const createChartOptions = () => ({
       borderWidth: 1,
       callbacks: {
         title: function(context: any) {
-          // Show full date in tooltip
+          // Show formatted date in tooltip
           const label = context[0].label;
-          return label;
+          const date = new Date(label);
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
         },
         label: function(context: any) {
           return `Events: ${context.parsed.y}`;
@@ -132,27 +135,56 @@ export const createChartOptions = () => ({
       ticks: {
         color: '#6b7280',
         font: {
-          size: 11,
+          size: 12,
         },
-        maxRotation: 45,
-        minRotation: 45,
-        autoSkip: true,
-        autoSkipPadding: 50,
-        // Custom callback to show labels at 3-month intervals
-        callback: function(value: any, index: number) {
+        maxRotation: 0,
+        autoSkip: false,
+        // Custom callback to show only month names at intervals
+        callback: function(value: any, index: number, ticks: any) {
+          // Get the label (which is a date string)
           const label = this.getLabelForValue(value);
           const date = new Date(label);
           
-          // Show label at the start of each quarter
+          if (isNaN(date.getTime())) return '';
+          
+          const totalPoints = ticks.length;
           const month = date.getMonth();
+          const year = date.getFullYear();
           const day = date.getDate();
           
-          // Show labels for Jan, Apr, Jul, Oct (quarters) and near the 1st of the month
-          if ((month % 3 === 0 && day <= 7) || index === 0 || index === this.max) {
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return `${monthNames[month]} ${date.getFullYear()}`;
+          // Calculate interval - aim for about 4-5 labels across the chart
+          const interval = Math.max(1, Math.floor(totalPoints / 5));
+          
+          // Track which months we've already shown
+          if (!this.shownMonths) {
+            this.shownMonths = new Set();
           }
+          
+          const monthKey = `${year}-${month}`;
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          
+          // Show first and last
+          if (index === 0) {
+            this.shownMonths.add(monthKey);
+            return `${monthNames[month]} ${year}`;
+          }
+          
+          if (index === totalPoints - 1) {
+            return `${monthNames[month]} ${year}`;
+          }
+          
+          // Show at regular intervals, but only once per month
+          if (index % interval === 0 && !this.shownMonths.has(monthKey)) {
+            this.shownMonths.add(monthKey);
+            
+            // Show year for January
+            if (month === 0) {
+              return `${monthNames[month]} ${year}`;
+            }
+            return monthNames[month];
+          }
+          
           return '';
         },
       },

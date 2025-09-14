@@ -115,11 +115,9 @@ const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartC
       }
     }
     
-    // Create labels for all dates
-    const labels = filledData.map(item => {
-      const date = new Date(item.date);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    });
+    // Create labels for all dates (used for data alignment and tooltips)
+    // We'll use the actual dates as labels so the chart can properly place points
+    const labels = filledData.map(item => item.date);
     
     const data = filledData.map(item => item.count);
     
