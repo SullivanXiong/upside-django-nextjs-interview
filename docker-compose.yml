@@ -22,9 +22,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./client:/app
-      - ./client/node_modules:/app/node_modules
-      - ./client/.next/:/app/.next
+      - ./client:/app/
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:

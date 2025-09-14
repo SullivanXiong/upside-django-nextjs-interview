@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChartContainer, ChartHeader, ChartWithMarkersNew } from './components';
+import { ChartContainer, ChartHeader, ChartWithMarkers } from './components';
 import { defaultChartData, ChartData } from './chartConfig';
 import { useActivityTimeline, useDashboardStats } from '@/lib/hooks';
 
@@ -65,7 +65,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
       )}
       
       {!isLoading && !hasError && (
-        <ChartWithMarkersNew data={chartData} />
+        <ChartWithMarkers data={chartData} />
       )}
     </ChartContainer>
   );
