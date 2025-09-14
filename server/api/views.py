@@ -255,6 +255,66 @@ def all_activity_events(request):
     })
 
 
+def all_events_for_chart(request):
+    """Return all ActivityEvent records aggregated for chart visualization.
+    
+    Query parameters:
+    - customer_org_id (required)
+    - account_id (optional)
+    """
+    customer_org_id = request.GET.get("customer_org_id")
+    
+    if not customer_org_id:
+        return JsonResponse(
+            {"error": "'customer_org_id' query parameter is required."},
+            status=400,
+        )
+    
+    # Build query
+    events_qs = ActivityEvent.objects.filter(customer_org_id=customer_org_id)
+    
+    # Optional account_id filter
+    account_id = request.GET.get("account_id")
+    if account_id:
+        events_qs = events_qs.filter(account_id=account_id)
+    
+    # Get all events ordered by timestamp
+    events_qs = events_qs.order_by('timestamp')
+    
+    # Get all events with minimal fields for chart
+    events = list(events_qs.values('id', 'timestamp', 'activity', 'channel', 'status'))
+    
+    # Get date range
+    if events:
+        date_range = {
+            "start": events[0]["timestamp"].isoformat(),
+            "end": events[-1]["timestamp"].isoformat(),
+        }
+    else:
+        date_range = {"start": None, "end": None}
+    
+    # Group by date for daily counts
+    daily_counts = {}
+    for event in events:
+        date_key = event['timestamp'].date().isoformat()
+        if date_key not in daily_counts:
+            daily_counts[date_key] = 0
+        daily_counts[date_key] += 1
+    
+    # Convert to sorted list
+    daily_data = [
+        {"date": date, "count": count}
+        for date, count in sorted(daily_counts.items())
+    ]
+    
+    return JsonResponse({
+        "events": events,
+        "daily_counts": daily_data,
+        "total_count": len(events),
+        "date_range": date_range
+    })
+
+
 def all_persons(request):
     """Return all Person records for the given customer.
     

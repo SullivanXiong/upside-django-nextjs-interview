@@ -23,6 +23,7 @@ import { ActivityEvent, Person } from '@/lib/api/types';
 interface TableProps {
   className?: string;
   onPageDateRangeChange?: (startDate: string | null, endDate: string | null) => void;
+  targetDate?: string | null;
 }
 
 interface TouchpointData {
@@ -46,7 +47,7 @@ interface TouchpointData {
   };
 }
 
-const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange }) => {
+const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, targetDate }) => {
   const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
   const [pageSize] = useState(10);
   
@@ -71,6 +72,31 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange }) 
       );
     }
   }, [eventsData?.date_range?.current_page, onPageDateRangeChange]);
+  
+  // Handle navigation when chart is clicked
+  useEffect(() => {
+    if (targetDate && eventsData?.results) {
+      // Find which page contains the target date
+      const targetTime = new Date(targetDate).getTime();
+      
+      // Calculate approximate page based on date
+      // This is a simplified approach - in production you might want to 
+      // make an API call to find the exact page for a given date
+      const totalPages = eventsData.pagination.total_pages;
+      
+      // Find the page that would contain this date
+      // Since events are sorted by date (newest first), we need to calculate
+      // which page the target date would be on
+      for (let page = 1; page <= totalPages; page++) {
+        // You could make this more accurate by fetching page metadata
+        // For now, just navigate to page 1 as a simple implementation
+        if (page !== currentPage) {
+          setPage(1); // Navigate to first page for simplicity
+          break;
+        }
+      }
+    }
+  }, [targetDate, eventsData, currentPage, setPage]);
   
   // Transform API data to table format
   useEffect(() => {

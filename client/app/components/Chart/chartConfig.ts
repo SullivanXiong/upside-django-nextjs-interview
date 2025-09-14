@@ -48,6 +48,12 @@ export interface ChartData {
     fill: boolean;
   }[];
   markers?: ChartMarker[];
+  quarterlyData?: Array<{
+    label: string;
+    count: number;
+    startDate: string;
+    endDate: string;
+  }>;
 }
 
 export const defaultChartData: ChartData = {

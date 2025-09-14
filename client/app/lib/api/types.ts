@@ -135,3 +135,23 @@ export interface PaginatedEventsParams {
   page_size?: number;
   sort_by?: string;
 }
+
+// Chart Events Response
+export interface ChartEventsResponse {
+  events: Array<{
+    id: number;
+    timestamp: string;
+    activity: string;
+    channel: string;
+    status: string;
+  }>;
+  daily_counts: Array<{
+    date: string;
+    count: number;
+  }>;
+  total_count: number;
+  date_range: {
+    start: string | null;
+    end: string | null;
+  };
+}

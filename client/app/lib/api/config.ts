@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
   
   // Paginated endpoints
   ALL_EVENTS: '/api/events/',
+  ALL_EVENTS_CHART: '/api/events/chart/',
   ALL_PEOPLE: '/api/people/',
 } as const;
 

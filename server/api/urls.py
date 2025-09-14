@@ -13,6 +13,7 @@ urlpatterns = [
     
     # New paginated endpoints
     path("api/events/", views.all_activity_events, name="all-activity-events"),
+    path("api/events/chart/", views.all_events_for_chart, name="all-events-chart"),
     path("api/people/", views.all_persons, name="all-people"),
     
     # Dashboard endpoints

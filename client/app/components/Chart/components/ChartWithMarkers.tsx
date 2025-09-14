@@ -12,19 +12,41 @@ interface ChartWithMarkersProps {
     start: string | null;
     end: string | null;
   };
+  onPointClick?: (index: number) => void;
 }
 
 const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({ 
   data, 
   className = '',
-  paginationRange
+  paginationRange,
+  onPointClick
 }) => {
   const chartRef = useRef<ChartJS<'line'>>(null);
   
-  // Create chart options with pagination range indicators
+  // Create chart options with click handler
   const chartOptions = useMemo(() => {
-    return createChartOptions();
-  }, []);
+    const options = createChartOptions();
+    
+    // Add click handler to the chart
+    if (onPointClick) {
+      options.onClick = (event: any, elements: any[]) => {
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          onPointClick(index);
+        }
+      };
+      
+      // Make cursor pointer on hover over data points
+      options.onHover = (event: any, elements: any[]) => {
+        const canvas = chartRef.current?.canvas;
+        if (canvas) {
+          canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        }
+      };
+    }
+    
+    return options;
+  }, [onPointClick]);
   
   // Ensure we have valid data
   if (!data.labels || data.labels.length === 0 || !data.datasets || data.datasets.length === 0) {

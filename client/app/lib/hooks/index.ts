@@ -8,3 +8,4 @@ export { useActivityTimeline } from './useActivityTimeline';
 export { useActivityEvents } from './useActivityEvents';
 export { usePeople } from './usePeople';
 export { usePaginatedEvents } from './usePaginatedEvents';
+export { useAllEventsForChart } from './useAllEventsForChart';
