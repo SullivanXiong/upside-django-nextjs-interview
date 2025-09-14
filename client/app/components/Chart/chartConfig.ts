@@ -139,9 +139,8 @@ export const createChartOptions = () => ({
         },
         maxRotation: 0,
         autoSkip: false,
-        // Custom callback to show only month names at intervals
+        // Show month labels at regular intervals
         callback: function(value: any, index: number, ticks: any) {
-          // Get the label (which is a date string)
           const label = this.getLabelForValue(value);
           const date = new Date(label);
           
@@ -150,35 +149,21 @@ export const createChartOptions = () => ({
           const totalPoints = ticks.length;
           const month = date.getMonth();
           const year = date.getFullYear();
-          const day = date.getDate();
           
-          // Calculate interval - aim for about 4-5 labels across the chart
-          const interval = Math.max(1, Math.floor(totalPoints / 5));
-          
-          // Track which months we've already shown
-          if (!this.shownMonths) {
-            this.shownMonths = new Set();
-          }
-          
-          const monthKey = `${year}-${month}`;
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           
-          // Show first and last
-          if (index === 0) {
-            this.shownMonths.add(monthKey);
+          // Always show first and last labels
+          if (index === 0 || index === totalPoints - 1) {
             return `${monthNames[month]} ${year}`;
           }
           
-          if (index === totalPoints - 1) {
-            return `${monthNames[month]} ${year}`;
-          }
+          // Calculate interval for approximately every 90 days (3 months)
+          const interval = Math.floor(totalPoints / Math.ceil(totalPoints / 90));
           
-          // Show at regular intervals, but only once per month
-          if (index % interval === 0 && !this.shownMonths.has(monthKey)) {
-            this.shownMonths.add(monthKey);
-            
-            // Show year for January
+          // Show labels at regular intervals
+          if (interval > 0 && index % interval === 0) {
+            // Add year for January or if it's been a while
             if (month === 0) {
               return `${monthNames[month]} ${year}`;
             }

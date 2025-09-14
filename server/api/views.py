@@ -227,11 +227,23 @@ def all_activity_events(request):
     events = list(page_obj.object_list.values())
     
     # Get date range for current page
+    # Note: The order depends on the sort_by parameter
     if events:
-        page_date_range = {
-            "start": events[-1]["timestamp"].isoformat() if events else None,
-            "end": events[0]["timestamp"].isoformat() if events else None,
-        }
+        # Determine if sorting is ascending or descending
+        is_descending = sort_by.startswith('-')
+        
+        if is_descending:
+            # For descending order (newest first)
+            page_date_range = {
+                "start": events[-1]["timestamp"].isoformat(),
+                "end": events[0]["timestamp"].isoformat(),
+            }
+        else:
+            # For ascending order (oldest first)
+            page_date_range = {
+                "start": events[0]["timestamp"].isoformat(),
+                "end": events[-1]["timestamp"].isoformat(),
+            }
     else:
         page_date_range = {"start": None, "end": None}
     

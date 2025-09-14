@@ -64,28 +64,53 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
       return null;
     }
 
-    const startIndex = paginationRange.start 
-      ? data.labels.findIndex(label => {
-          // Parse dates and compare
-          const labelDate = new Date(label).getTime();
-          const startDate = new Date(paginationRange.start!).getTime();
-          return labelDate >= startDate;
-        })
-      : -1;
+    console.log('Pagination range:', paginationRange);
+    console.log('Chart labels sample:', data.labels.slice(0, 5));
+
+    // Find the indices for start and end dates
+    let startIndex = -1;
+    let endIndex = -1;
+
+    if (paginationRange.start) {
+      // Parse the ISO date string properly
+      const startDate = new Date(paginationRange.start);
+      const startDateStr = startDate.toISOString().split('T')[0];
+      
+      // Find the first label that matches or is after the start date
+      startIndex = data.labels.findIndex(label => {
+        const labelDateStr = label.includes('T') ? label.split('T')[0] : label;
+        return labelDateStr >= startDateStr;
+      });
+    }
     
-    const endIndex = paginationRange.end
-      ? data.labels.findIndex(label => {
-          const labelDate = new Date(label).getTime();
-          const endDate = new Date(paginationRange.end!).getTime();
-          return labelDate >= endDate;
-        })
-      : -1;
+    if (paginationRange.end) {
+      // Parse the ISO date string properly
+      const endDate = new Date(paginationRange.end);
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      // Find the first label that is after the end date
+      endIndex = data.labels.findIndex(label => {
+        const labelDateStr = label.includes('T') ? label.split('T')[0] : label;
+        return labelDateStr > endDateStr;
+      });
+      
+      // If no date is after the end date, use the last index
+      if (endIndex === -1 && data.labels.length > 0) {
+        const lastLabelStr = data.labels[data.labels.length - 1];
+        const lastDateStr = lastLabelStr.includes('T') ? lastLabelStr.split('T')[0] : lastLabelStr;
+        if (lastDateStr <= endDateStr) {
+          endIndex = data.labels.length - 1;
+        }
+      }
+    }
+
+    console.log('Start index:', startIndex, 'End index:', endIndex);
 
     if (startIndex === -1 && endIndex === -1) return null;
 
     const totalLabels = data.labels.length;
-    const startPosition = startIndex >= 0 ? (startIndex / totalLabels) * 100 : null;
-    const endPosition = endIndex >= 0 ? (endIndex / totalLabels) * 100 : null;
+    const startPosition = startIndex >= 0 ? (startIndex / (totalLabels - 1)) * 100 : null;
+    const endPosition = endIndex >= 0 ? (endIndex / (totalLabels - 1)) * 100 : null;
 
     return { startPosition, endPosition };
   }, [data.labels, paginationRange]);

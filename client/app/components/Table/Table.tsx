@@ -51,7 +51,7 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
   const [pageSize] = useState(10);
   
-  // Fetch paginated data from API
+  // Fetch paginated data from API - sort by ascending date (oldest first)
   const { 
     data: eventsData, 
     loading: eventsLoading, 
@@ -59,7 +59,10 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
     currentPage,
     setPage,
     refetch: refetchEvents 
-  } = usePaginatedEvents({ page_size: pageSize });
+  } = usePaginatedEvents({ 
+    page_size: pageSize,
+    sort_by: 'timestamp'  // Remove the '-' to sort ascending (oldest first)
+  });
   const { data: peopleData, loading: peopleLoading, error: peopleError } = usePeople();
   const { data: statsData } = useDashboardStats();
   
@@ -101,14 +104,14 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
         const targetPosition = targetTime - overallStart;
         const relativePosition = targetPosition / totalRange;
         
-        // Since newest events are first, invert the position
-        const invertedPosition = 1 - relativePosition;
+        // Since oldest events are first now (ascending order), use direct position
+        const position = relativePosition;
         
         // Calculate the target page
         const totalPages = eventsData.pagination.total_pages;
         const estimatedPage = Math.max(1, Math.min(
           totalPages,
-          Math.ceil(invertedPosition * totalPages)
+          Math.ceil(position * totalPages)
         ));
         
         console.log('Estimated page for date:', estimatedPage);
