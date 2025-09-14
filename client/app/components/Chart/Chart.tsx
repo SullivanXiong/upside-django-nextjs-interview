@@ -18,7 +18,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
   const { data: statsData, loading: statsLoading, error: statsError } = useDashboardStats();
 
   useEffect(() => {
-    if (timelineData && timelineData.timeline) {
+    if (timelineData && timelineData.timeline && timelineData.timeline.length > 0) {
       // Transform API data to chart format
       const labels = timelineData.timeline.map(item => {
         const date = new Date(item.day);
@@ -59,11 +59,14 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
             fill: true,
           }
         ],
-        markers: markers.length > 0 ? markers : defaultChartData.markers.slice(0, labels.length)
+        markers: markers.length > 0 ? markers : []
       };
       setChartData(transformedData);
+    } else if (!timelineLoading && !timelineData) {
+      // If no data is available, keep using default chart data
+      console.log('No timeline data available, using default chart data');
     }
-  }, [timelineData]);
+  }, [timelineData, timelineLoading]);
 
   const isLoading = timelineLoading || statsLoading;
   const hasError = timelineError || statsError;
