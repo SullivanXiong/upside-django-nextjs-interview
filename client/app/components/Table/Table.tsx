@@ -401,15 +401,15 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
           
           {/* Page Size Selector */}
           <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-700">Show:</label>
+            <label className="text-sm text-gray-700">Page Size:</label>
             <select
-              value={pageSize}
+				  value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               {pageSizeOptions.map(size => (
                 <option key={size} value={size}>
-                  {size} rows
+						 {size}
                 </option>
               ))}
             </select>
