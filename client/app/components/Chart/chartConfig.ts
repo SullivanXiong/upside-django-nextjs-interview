@@ -40,14 +40,14 @@ export interface ChartData {
     data: number[];
     borderColor: string;
     backgroundColor: string;
-    pointBackgroundColor: string;
-    pointBorderColor: string;
-    pointRadius: number;
-    pointHoverRadius: number;
+    pointBackgroundColor?: string;
+    pointBorderColor?: string;
+    pointRadius?: number;
+    pointHoverRadius?: number;
     tension: number;
     fill: boolean;
   }[];
-  markers: ChartMarker[];
+  markers?: ChartMarker[];
 }
 
 export const defaultChartData: ChartData = {
