@@ -75,32 +75,65 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
     onPageDateRangeChange(range.start, range.end);
   }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, onPageDateRangeChange]);
   
-  // One-shot navigation: estimate page from overall date range; do not loop
-  const lastNavRef = React.useRef<{ date: string; page: number } | null>(null);
+  // Stepwise navigation using date-only string comparisons to avoid timezone drift
+  const getDateOnly = (v?: string | null) => (v ? (v.includes('T') ? v.split('T')[0] : v) : null);
+  const isWithin = (d: string, start?: string | null, end?: string | null) => {
+    const sd = getDateOnly(start);
+    const ed = getDateOnly(end);
+    if (!sd || !ed) return false;
+    return d >= sd && d <= ed;
+  };
+
+  const navStateRef = React.useRef<{
+    target: string;
+    direction: 'forward' | 'backward';
+    remaining: number;
+  } | null>(null);
+
   useEffect(() => {
     if (!targetDate || !eventsData) return;
-    if (lastNavRef.current?.date === targetDate) return;
+    const d = getDateOnly(targetDate);
+    if (!d) return;
 
-    const totalPages = eventsData.pagination?.total_pages || 1;
-    if (totalPages <= 1) {
-      lastNavRef.current = { date: targetDate, page: currentPage };
+    const range = eventsData.date_range?.current_page;
+    if (range && isWithin(d, range.start, range.end)) {
+      navStateRef.current = null;
       return;
     }
 
     const overall = eventsData.date_range?.overall;
     if (!overall?.start || !overall?.end) return;
-    const targetTime = new Date(targetDate).getTime();
-    const overallStart = new Date(overall.start).getTime();
-    const overallEnd = new Date(overall.end).getTime();
-    if (isNaN(targetTime) || targetTime < overallStart || targetTime > overallEnd) return;
 
-    const totalRange = Math.max(1, overallEnd - overallStart);
-    const relative = (targetTime - overallStart) / totalRange;
-    const estimated = Math.min(totalPages, Math.max(1, Math.round(relative * (totalPages - 1)) + 1));
+    const totalPages = eventsData.pagination?.total_pages || 1;
+    if (totalPages <= 1) return;
 
-    lastNavRef.current = { date: targetDate, page: estimated };
-    if (estimated !== currentPage) setPage(estimated);
+    const dir: 'forward' | 'backward' = d > getDateOnly(range?.end || overall.start)! ? 'forward' : 'backward';
+    navStateRef.current = { target: d, direction: dir, remaining: 20 };
+
+    if (dir === 'forward' && eventsData.pagination.has_next) setPage(currentPage + 1);
+    else if (dir === 'backward' && eventsData.pagination.has_previous) setPage(currentPage - 1);
   }, [targetDate, eventsData, currentPage, setPage]);
+
+  useEffect(() => {
+    const st = navStateRef.current;
+    if (!st || !eventsData) return;
+    if (st.remaining <= 0) { navStateRef.current = null; return; }
+
+    const range = eventsData.date_range?.current_page;
+    if (range && isWithin(st.target, range.start, range.end)) { navStateRef.current = null; return; }
+
+    const canForward = eventsData.pagination?.has_next;
+    const canBack = eventsData.pagination?.has_previous;
+    if (st.direction === 'forward' && canForward) {
+      st.remaining -= 1;
+      setPage(currentPage + 1);
+    } else if (st.direction === 'backward' && canBack) {
+      st.remaining -= 1;
+      setPage(currentPage - 1);
+    } else {
+      navStateRef.current = null;
+    }
+  }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, currentPage, setPage, eventsData]);
   
   // Transform API data to table format
   useEffect(() => {

@@ -30,7 +30,15 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
     // Add click handler to the chart
     if (onPointClick) {
       (options as any).onClick = (event: any, elements: any[]) => {
-        if (elements.length > 0) {
+        // Use nearestX if no element is under the pointer so clicks between points still work
+        const scale = (chartRef.current as any)?.scales?.x;
+        if ((!elements || elements.length === 0) && scale) {
+          const x = (event.native?.offsetX ?? event.x) as number;
+          const index = scale.getValueForPixel ? scale.getValueForPixel(x) : undefined;
+          if (typeof index === 'number') onPointClick(index);
+          return;
+        }
+        if (elements && elements.length > 0) {
           const index = elements[0].index;
           onPointClick(index);
         }
@@ -133,20 +141,20 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
           <>
             {rangeIndicators.startPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60"
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60 pointer-events-none"
                 style={{ left: `${rangeIndicators.startPosition}%` }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
                   Page Start
                 </div>
               </div>
             )}
             {rangeIndicators.endPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60"
+                className="absolute top-0 bottom-0 w-0.5 bg-primary opacity-60 pointer-events-none"
                 style={{ left: `${rangeIndicators.endPosition}%` }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
                   Page End
                 </div>
               </div>
@@ -154,7 +162,7 @@ const ChartWithMarkers: React.FC<ChartWithMarkersProps> = ({
             {/* Highlight the range between start and end */}
             {rangeIndicators.startPosition !== null && rangeIndicators.endPosition !== null && (
               <div
-                className="absolute top-0 bottom-0 bg-primary opacity-10"
+                className="absolute top-0 bottom-0 bg-primary opacity-10 pointer-events-none"
                 style={{
                   left: `${rangeIndicators.startPosition}%`,
                   width: `${rangeIndicators.endPosition - rangeIndicators.startPosition}%`
