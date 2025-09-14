@@ -40,14 +40,24 @@ export interface ChartData {
     data: number[];
     borderColor: string;
     backgroundColor: string;
-    pointBackgroundColor: string;
-    pointBorderColor: string;
-    pointRadius: number;
-    pointHoverRadius: number;
+    pointBackgroundColor?: string;
+    pointBorderColor?: string;
+    pointRadius?: number;
+    pointHoverRadius?: number;
     tension: number;
     fill: boolean;
   }[];
-  markers: ChartMarker[];
+  markers?: ChartMarker[];
+  quarterlyData?: Array<{
+    label: string;
+    count: number;
+    startDate: string;
+    endDate: string;
+  }>;
+  dailyData?: Array<{
+    date: string;
+    count: number;
+  }>;
 }
 
 export const defaultChartData: ChartData = {
@@ -85,7 +95,7 @@ export const defaultChartData: ChartData = {
   ]
 };
 
-export const chartOptions = {
+export const createChartOptions = () => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -99,6 +109,19 @@ export const chartOptions = {
       bodyColor: 'white',
       borderColor: '#3b82f6',
       borderWidth: 1,
+      callbacks: {
+        title: function(context: any) {
+          // Show formatted date in tooltip
+          const label = context[0].label;
+          const date = new Date(label);
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        },
+        label: function(context: any) {
+          return `Events: ${context.parsed.y}`;
+        }
+      }
     },
   },
   scales: {
@@ -113,6 +136,41 @@ export const chartOptions = {
         color: '#6b7280',
         font: {
           size: 12,
+        },
+        maxRotation: 0,
+        autoSkip: false,
+        // Show month labels at regular intervals
+        callback: function(value: any, index: number, ticks: any) {
+          const label = this.getLabelForValue(value);
+          const date = new Date(label);
+          
+          if (isNaN(date.getTime())) return '';
+          
+          const totalPoints = ticks.length;
+          const month = date.getMonth();
+          const year = date.getFullYear();
+          
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          
+          // Always show first and last labels
+          if (index === 0 || index === totalPoints - 1) {
+            return `${monthNames[month]} ${year}`;
+          }
+          
+          // Calculate interval for approximately every 90 days (3 months)
+          const interval = Math.floor(totalPoints / Math.ceil(totalPoints / 90));
+          
+          // Show labels at regular intervals
+          if (interval > 0 && index % interval === 0) {
+            // Add year for January or if it's been a while
+            if (month === 0) {
+              return `${monthNames[month]} ${year}`;
+            }
+            return monthNames[month];
+          }
+          
+          return '';
         },
       },
     },
@@ -134,4 +192,7 @@ export const chartOptions = {
     intersect: false,
     mode: 'index' as const,
   },
-};
+});
+
+// Keep the old chartOptions for backward compatibility
+export const chartOptions = createChartOptions();
