@@ -7,9 +7,13 @@ urlpatterns = [
     # API root
     path("", views.index, name="index"),
     
-    # Original endpoints
+    # Original endpoints (kept for compatibility)
     path("api/events/random/", views.random_activity_events, name="random-activity-events"),
     path("api/people/random/", views.random_persons, name="random-people"),
+    
+    # New paginated endpoints
+    path("api/events/", views.all_activity_events, name="all-activity-events"),
+    path("api/people/", views.all_persons, name="all-people"),
     
     # Dashboard endpoints
     path("api/dashboard/stats/", views.dashboard_stats, name="dashboard-stats"),

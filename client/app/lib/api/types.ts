@@ -98,10 +98,40 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-// Pagination Types (for future use)
-export interface PaginatedResponse<T> {
-  results: T[];
+// Pagination Types
+export interface PaginationInfo {
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+export interface DateRange {
+  start: string | null;
+  end: string | null;
+}
+
+export interface PaginatedEventsResponse {
+  results: ActivityEvent[];
+  pagination: PaginationInfo;
+  date_range: {
+    overall: DateRange;
+    current_page: DateRange;
+  };
+}
+
+export interface AllPersonsResponse {
+  results: Person[];
   count: number;
-  next?: string;
-  previous?: string;
+}
+
+// Request parameters for paginated events
+export interface PaginatedEventsParams {
+  customer_org_id: string;
+  account_id?: string;
+  page?: number;
+  page_size?: number;
+  sort_by?: string;
 }

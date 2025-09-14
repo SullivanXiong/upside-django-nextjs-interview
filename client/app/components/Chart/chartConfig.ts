@@ -85,7 +85,7 @@ export const defaultChartData: ChartData = {
   ]
 };
 
-export const chartOptions = {
+export const createChartOptions = () => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -134,4 +134,7 @@ export const chartOptions = {
     intersect: false,
     mode: 'index' as const,
   },
-};
+});
+
+// Keep the old chartOptions for backward compatibility
+export const chartOptions = createChartOptions();

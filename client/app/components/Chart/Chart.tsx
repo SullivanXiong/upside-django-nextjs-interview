@@ -7,6 +7,10 @@ import { useActivityTimeline, useDashboardStats } from '@/lib/hooks';
 
 interface ChartProps {
   className?: string;
+  paginationRange?: {
+    start: string | null;
+    end: string | null;
+  };
 }
 
 // Generate sample data function
@@ -42,13 +46,13 @@ const generateSampleData = (): ChartData => {
   };
 };
 
-const Chart: React.FC<ChartProps> = ({ className = '' }) => {
+const Chart: React.FC<ChartProps> = ({ className = '', paginationRange }) => {
   const [showBids, setShowBids] = useState(false);
   // Initialize with sample data
   const [chartData, setChartData] = useState<ChartData>(generateSampleData());
   
-  // Fetch real data from API
-  const { data: timelineData, loading: timelineLoading, error: timelineError } = useActivityTimeline();
+  // Fetch real data from API - get longer timeline for full view
+  const { data: timelineData, loading: timelineLoading, error: timelineError } = useActivityTimeline({ days: 90 });
   const { data: statsData, loading: statsLoading, error: statsError } = useDashboardStats();
 
   useEffect(() => {
@@ -59,7 +63,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
       // Transform API data to chart format
       const labels = timelineData.timeline.map(item => {
         const date = new Date(item.day);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       });
       
       const data = timelineData.timeline.map(item => item.count);
@@ -68,14 +72,14 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
         labels,
         datasets: [
           {
-            label: 'Activity Events (Live Data)',
+            label: 'Activity Events',
             data,
             borderColor: 'rgb(34, 197, 94)',
             backgroundColor: 'rgba(34, 197, 94, 0.1)',
             pointBackgroundColor: 'rgb(34, 197, 94)',
             pointBorderColor: 'rgb(34, 197, 94)',
-            pointRadius: 4,
-            pointHoverRadius: 6,
+            pointRadius: 3,
+            pointHoverRadius: 5,
             tension: 0.4,
             fill: true,
           }
@@ -106,7 +110,7 @@ const Chart: React.FC<ChartProps> = ({ className = '' }) => {
       />
       
       {/* Always show the chart with either real or sample data */}
-      <ChartWithMarkers data={chartData} />
+      <ChartWithMarkers data={chartData} paginationRange={paginationRange} />
       
       {/* Show loading/error indicators as overlays if needed */}
       {isLoading && (

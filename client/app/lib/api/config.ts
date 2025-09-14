@@ -14,6 +14,10 @@ export const API_ENDPOINTS = {
   // Data endpoints
   RANDOM_EVENTS: '/api/events/random/',
   RANDOM_PEOPLE: '/api/people/random/',
+  
+  // Paginated endpoints
+  ALL_EVENTS: '/api/events/',
+  ALL_PEOPLE: '/api/people/',
 } as const;
 
 // Default values from the actual data

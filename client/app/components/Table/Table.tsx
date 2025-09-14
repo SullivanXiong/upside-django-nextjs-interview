@@ -17,11 +17,12 @@ import {
   StarIcon, 
   RefreshIcon
 } from '../Icons';
-import { useActivityEvents, usePeople, useDashboardStats } from '@/lib/hooks';
+import { usePaginatedEvents, usePeople, useDashboardStats } from '@/lib/hooks';
 import { ActivityEvent, Person } from '@/lib/api/types';
 
 interface TableProps {
   className?: string;
+  onPageDateRangeChange?: (startDate: string | null, endDate: string | null) => void;
 }
 
 interface TouchpointData {
@@ -45,18 +46,36 @@ interface TouchpointData {
   };
 }
 
-const Table: React.FC<TableProps> = ({ className = '' }) => {
+const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange }) => {
   const [touchpoints, setTouchpoints] = useState<TouchpointData[]>([]);
+  const [pageSize] = useState(10);
   
-  // Fetch real data from API
-  const { data: eventsData, loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useActivityEvents();
+  // Fetch paginated data from API
+  const { 
+    data: eventsData, 
+    loading: eventsLoading, 
+    error: eventsError, 
+    currentPage,
+    setPage,
+    refetch: refetchEvents 
+  } = usePaginatedEvents({ page_size: pageSize });
   const { data: peopleData, loading: peopleLoading, error: peopleError } = usePeople();
   const { data: statsData } = useDashboardStats();
   
+  // Notify parent about page date range changes
+  useEffect(() => {
+    if (eventsData?.date_range?.current_page && onPageDateRangeChange) {
+      onPageDateRangeChange(
+        eventsData.date_range.current_page.start,
+        eventsData.date_range.current_page.end
+      );
+    }
+  }, [eventsData?.date_range?.current_page, onPageDateRangeChange]);
+  
   // Transform API data to table format
   useEffect(() => {
-    if (eventsData && peopleData) {
-      const transformedData: TouchpointData[] = eventsData.map((event, index) => {
+    if (eventsData?.results && peopleData) {
+      const transformedData: TouchpointData[] = eventsData.results.map((event, index) => {
         // Find a person to associate with this event (randomly for demo)
         const person = peopleData[index % peopleData.length] || peopleData[0];
         
@@ -112,7 +131,10 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
   
   const isLoading = eventsLoading || peopleLoading;
   const hasError = eventsError || peopleError;
-  const totalCount = statsData?.total_events || touchpoints.length;
+  const totalCount = eventsData?.pagination?.total_count || statsData?.total_events || touchpoints.length;
+  const totalPages = eventsData?.pagination?.total_pages || 1;
+  const hasNext = eventsData?.pagination?.has_next || false;
+  const hasPrevious = eventsData?.pagination?.has_previous || false;
   
   const handleRefresh = () => {
     refetchEvents();
@@ -295,14 +317,67 @@ const Table: React.FC<TableProps> = ({ className = '' }) => {
       </div>
       )}
 
-      {/* Scroll indicator */}
-      <div className="flex justify-center py-4">
-        <div className="flex space-x-1">
-          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+      {/* Pagination Controls */}
+      {!isLoading && !hasError && totalPages > 1 && (
+      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <span className="text-sm text-gray-500">
+            ({totalCount} total items)
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setPage(currentPage - 1)}
+            disabled={!hasPrevious}
+            className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          
+          {/* Page numbers */}
+          <div className="flex space-x-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    currentPage === pageNum
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          
+          <button
+            onClick={() => setPage(currentPage + 1)}
+            disabled={!hasNext}
+            className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       </div>
+      )}
     </div>
   );
 };
