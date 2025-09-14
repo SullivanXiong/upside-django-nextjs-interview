@@ -54,6 +54,10 @@ export interface ChartData {
     startDate: string;
     endDate: string;
   }>;
+  dailyData?: Array<{
+    date: string;
+    count: number;
+  }>;
 }
 
 export const defaultChartData: ChartData = {
@@ -105,6 +109,16 @@ export const createChartOptions = () => ({
       bodyColor: 'white',
       borderColor: '#3b82f6',
       borderWidth: 1,
+      callbacks: {
+        title: function(context: any) {
+          // Show full date in tooltip
+          const label = context[0].label;
+          return label;
+        },
+        label: function(context: any) {
+          return `Events: ${context.parsed.y}`;
+        }
+      }
     },
   },
   scales: {
@@ -118,7 +132,28 @@ export const createChartOptions = () => ({
       ticks: {
         color: '#6b7280',
         font: {
-          size: 12,
+          size: 11,
+        },
+        maxRotation: 45,
+        minRotation: 45,
+        autoSkip: true,
+        autoSkipPadding: 50,
+        // Custom callback to show labels at 3-month intervals
+        callback: function(value: any, index: number) {
+          const label = this.getLabelForValue(value);
+          const date = new Date(label);
+          
+          // Show label at the start of each quarter
+          const month = date.getMonth();
+          const day = date.getDate();
+          
+          // Show labels for Jan, Apr, Jul, Oct (quarters) and near the 1st of the month
+          if ((month % 3 === 0 && day <= 7) || index === 0 || index === this.max) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${monthNames[month]} ${date.getFullYear()}`;
+          }
+          return '';
         },
       },
     },

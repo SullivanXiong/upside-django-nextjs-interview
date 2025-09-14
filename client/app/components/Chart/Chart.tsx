@@ -47,40 +47,36 @@ const generateSampleData = (): ChartData => {
   };
 };
 
-// Helper function to group data by 3-month periods
-const groupByQuarter = (dailyCounts: Array<{ date: string; count: number }>) => {
-  const quarters: { [key: string]: { count: number; startDate: string; endDate: string } } = {};
+// Helper function to generate labels at 3-month intervals
+const generateQuarterlyLabels = (dailyCounts: Array<{ date: string; count: number }>) => {
+  if (dailyCounts.length === 0) return { labels: [], displayIndices: [] };
   
-  dailyCounts.forEach(item => {
-    const date = new Date(item.date);
-    const year = date.getFullYear();
+  const allDates = dailyCounts.map(item => item.date);
+  const labels: string[] = [];
+  const displayIndices: number[] = [];
+  
+  // Create labels for all dates but only display at 3-month intervals
+  let lastQuarterShown = -1;
+  
+  allDates.forEach((dateStr, index) => {
+    const date = new Date(dateStr);
     const quarter = Math.floor(date.getMonth() / 3);
-    const quarterKey = `${year}-Q${quarter + 1}`;
+    const year = date.getFullYear();
+    const quarterKey = `${year}-Q${quarter}`;
     
-    if (!quarters[quarterKey]) {
-      const startMonth = quarter * 3;
-      const endMonth = startMonth + 2;
-      const startDate = new Date(year, startMonth, 1);
-      const endDate = new Date(year, endMonth + 1, 0); // Last day of the quarter
-      
-      quarters[quarterKey] = {
-        count: 0,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      };
+    // Always add the label (for data point alignment)
+    labels.push(dateStr);
+    
+    // Only mark for display at the start of each quarter
+    if (quarter !== lastQuarterShown || index === 0 || index === allDates.length - 1) {
+      const monthNames = ['Jan', 'Apr', 'Jul', 'Oct'];
+      const displayLabel = `${monthNames[quarter * 1]} ${year}`;
+      displayIndices.push(index);
+      lastQuarterShown = quarter;
     }
-    
-    quarters[quarterKey].count += item.count;
   });
   
-  return Object.entries(quarters)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => ({
-      label: key,
-      count: value.count,
-      startDate: value.startDate,
-      endDate: value.endDate
-    }));
+  return { labels, displayIndices };
 };
 
 const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartClick }) => {
@@ -98,37 +94,54 @@ const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartC
       return null;
     }
 
-    // Group by quarters (3-month periods)
-    const quarterlyData = groupByQuarter(eventsData.daily_counts);
+    // Sort daily counts by date
+    const sortedDailyCounts = [...eventsData.daily_counts].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     
-    // Create labels and data arrays
-    const labels = quarterlyData.map(q => {
-      const [year, quarter] = q.label.split('-Q');
-      const quarterNames = ['Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec'];
-      return `${quarterNames[parseInt(quarter) - 1]} ${year}`;
+    // Fill in missing dates with 0 counts for continuous line
+    const filledData: Array<{ date: string; count: number }> = [];
+    if (sortedDailyCounts.length > 0) {
+      const startDate = new Date(sortedDailyCounts[0].date);
+      const endDate = new Date(sortedDailyCounts[sortedDailyCounts.length - 1].date);
+      const dateMap = new Map(sortedDailyCounts.map(item => [item.date, item.count]));
+      
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        filledData.push({
+          date: dateStr,
+          count: dateMap.get(dateStr) || 0
+        });
+      }
+    }
+    
+    // Create labels for all dates
+    const labels = filledData.map(item => {
+      const date = new Date(item.date);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     });
     
-    const data = quarterlyData.map(q => q.count);
+    const data = filledData.map(item => item.count);
     
     return {
       labels,
       datasets: [
         {
-          label: 'Activity Events (3-month totals)',
+          label: 'Daily Activity Events',
           data,
           borderColor: 'rgb(34, 197, 94)',
           backgroundColor: 'rgba(34, 197, 94, 0.1)',
           pointBackgroundColor: 'rgb(34, 197, 94)',
           pointBorderColor: 'rgb(34, 197, 94)',
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.1,
           fill: true,
         }
       ],
       markers: [],
-      // Store the original quarterly data for click handling
-      quarterlyData
+      // Store the daily data for click handling
+      dailyData: filledData
     };
   }, [eventsData]);
 
@@ -141,17 +154,18 @@ const Chart: React.FC<ChartProps> = ({ className = '', paginationRange, onChartC
 
   const isLoading = eventsLoading || statsLoading;
   const hasError = eventsError || statsError;
-  const subtitle = eventsData ? `${eventsData.total_count} total events grouped by quarter` : 
+  const subtitle = eventsData ? `${eventsData.total_count} total events over ${processedChartData?.dailyData?.length || 0} days` : 
                    statsData ? `${statsData.total_events} total events` : 
                    'Sample data';
   
   // Handle chart click to navigate to specific date in table
   const handleChartClick = (index: number) => {
-    if (processedChartData?.quarterlyData && onChartClick) {
-      const quarter = processedChartData.quarterlyData[index];
-      if (quarter) {
-        // Pass the start date of the quarter to navigate to that page in the table
-        onChartClick(quarter.startDate);
+    if (processedChartData?.dailyData && onChartClick) {
+      const dayData = processedChartData.dailyData[index];
+      if (dayData) {
+        // Pass the clicked date to navigate to that page in the table
+        console.log('Chart clicked - navigating to date:', dayData.date);
+        onChartClick(dayData.date);
       }
     }
   };

@@ -75,28 +75,52 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
   
   // Handle navigation when chart is clicked
   useEffect(() => {
-    if (targetDate && eventsData?.results) {
-      // Find which page contains the target date
+    const navigateToDate = async () => {
+      if (!targetDate || !eventsData) return;
+      
+      console.log('Navigating to date:', targetDate);
       const targetTime = new Date(targetDate).getTime();
       
-      // Calculate approximate page based on date
-      // This is a simplified approach - in production you might want to 
-      // make an API call to find the exact page for a given date
-      const totalPages = eventsData.pagination.total_pages;
+      // Since events are sorted by date (newest first by default),
+      // we need to find which page contains the target date
       
-      // Find the page that would contain this date
-      // Since events are sorted by date (newest first), we need to calculate
-      // which page the target date would be on
-      for (let page = 1; page <= totalPages; page++) {
-        // You could make this more accurate by fetching page metadata
-        // For now, just navigate to page 1 as a simple implementation
-        if (page !== currentPage) {
-          setPage(1); // Navigate to first page for simplicity
-          break;
+      // Get the overall date range
+      if (eventsData.date_range?.overall) {
+        const overallStart = new Date(eventsData.date_range.overall.start).getTime();
+        const overallEnd = new Date(eventsData.date_range.overall.end).getTime();
+        
+        // Check if target date is within the data range
+        if (targetTime < overallStart || targetTime > overallEnd) {
+          console.log('Target date is outside data range');
+          return;
+        }
+        
+        // Estimate the page based on date position
+        // This is approximate - for exact navigation, you'd need to know event distribution
+        const totalRange = overallEnd - overallStart;
+        const targetPosition = targetTime - overallStart;
+        const relativePosition = targetPosition / totalRange;
+        
+        // Since newest events are first, invert the position
+        const invertedPosition = 1 - relativePosition;
+        
+        // Calculate the target page
+        const totalPages = eventsData.pagination.total_pages;
+        const estimatedPage = Math.max(1, Math.min(
+          totalPages,
+          Math.ceil(invertedPosition * totalPages)
+        ));
+        
+        console.log('Estimated page for date:', estimatedPage);
+        
+        if (estimatedPage !== currentPage) {
+          setPage(estimatedPage);
         }
       }
-    }
-  }, [targetDate, eventsData, currentPage, setPage]);
+    };
+    
+    navigateToDate();
+  }, [targetDate]); // Remove dependencies that would cause infinite loops
   
   // Transform API data to table format
   useEffect(() => {
