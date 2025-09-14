@@ -75,59 +75,89 @@ const Table: React.FC<TableProps> = ({ className = '', onPageDateRangeChange, ta
     onPageDateRangeChange(range.start, range.end);
   }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, onPageDateRangeChange]);
   
-  // Handle navigation when chart is clicked
+  // Navigate to the page that contains the clicked date using a guided binary search
+  const searchRef = React.useRef<{
+    active: boolean;
+    low: number;
+    high: number;
+    targetTime: number;
+    attempts: number;
+  } | null>(null);
+
+  // Kick off a search when targetDate changes
   useEffect(() => {
-    const navigateToDate = async () => {
-      if (!targetDate || !eventsData) return;
-      
-      console.log('Navigating to date:', targetDate);
-      const targetTime = new Date(targetDate).getTime();
-      
-      // Since events are sorted by date (newest first by default),
-      // we need to find which page contains the target date
-      
-      // Get the overall date range
-      if (eventsData.date_range?.overall) {
-        const overallStartStr = eventsData.date_range.overall.start;
-        const overallEndStr = eventsData.date_range.overall.end;
-        if (!overallStartStr || !overallEndStr) {
-          return;
-        }
-        const overallStart = new Date(overallStartStr).getTime();
-        const overallEnd = new Date(overallEndStr).getTime();
-        
-        // Check if target date is within the data range
-        if (targetTime < overallStart || targetTime > overallEnd) {
-          console.log('Target date is outside data range');
-          return;
-        }
-        
-        // Estimate the page based on date position
-        // This is approximate - for exact navigation, you'd need to know event distribution
-        const totalRange = overallEnd - overallStart;
-        const targetPosition = targetTime - overallStart;
-        const relativePosition = targetPosition / totalRange;
-        
-        // Since oldest events are first now (ascending order), use direct position
-        const position = relativePosition;
-        
-        // Calculate the target page
-        const totalPages = eventsData.pagination.total_pages;
-        const estimatedPage = Math.max(1, Math.min(
-          totalPages,
-          Math.ceil(position * totalPages)
-        ));
-        
-        console.log('Estimated page for date:', estimatedPage);
-        
-        if (estimatedPage !== currentPage) {
-          setPage(estimatedPage);
-        }
-      }
+    if (!targetDate || !eventsData) return;
+    const totalPages = eventsData.pagination?.total_pages || 1;
+    if (totalPages <= 1) return;
+
+    const overall = eventsData.date_range?.overall;
+    if (!overall?.start || !overall?.end) return;
+    const targetTime = new Date(targetDate).getTime();
+    const overallStart = new Date(overall.start).getTime();
+    const overallEnd = new Date(overall.end).getTime();
+    if (isNaN(targetTime) || targetTime < overallStart || targetTime > overallEnd) return;
+
+    // Initial guess based on time proportion to speed up convergence
+    const totalRange = Math.max(1, overallEnd - overallStart);
+    const relative = (targetTime - overallStart) / totalRange;
+    const initial = Math.min(totalPages, Math.max(1, Math.ceil(relative * totalPages)));
+
+    searchRef.current = {
+      active: true,
+      low: 1,
+      high: totalPages,
+      targetTime,
+      attempts: 0,
     };
-    
-    navigateToDate();
+
+    if (initial !== currentPage) {
+      setPage(initial);
+    }
   }, [targetDate, eventsData, currentPage, setPage]);
+
+  // Continue the search whenever the current page range updates
+  useEffect(() => {
+    const state = searchRef.current;
+    if (!state?.active || !eventsData) return;
+
+    const totalPages = eventsData.pagination?.total_pages || 1;
+    const pageRange = eventsData.date_range?.current_page;
+    if (!pageRange?.start || !pageRange?.end) return;
+
+    const pageStart = new Date(pageRange.start).getTime();
+    const pageEnd = new Date(pageRange.end).getTime();
+    const mid = currentPage;
+
+    // If the target date falls within this page range, stop searching
+    if (state.targetTime >= pageStart && state.targetTime <= pageEnd) {
+      searchRef.current = null;
+      return;
+    }
+
+    // Adjust bounds
+    if (state.targetTime < pageStart) {
+      state.high = Math.max(1, mid - 1);
+    } else {
+      state.low = Math.min(totalPages, mid + 1);
+    }
+
+    state.attempts += 1;
+    const MAX_ATTEMPTS = 12; // ~log2(4096) pages
+    if (state.attempts > MAX_ATTEMPTS || state.low > state.high) {
+      // Bail out to the closest bound
+      const fallback = Math.min(totalPages, Math.max(1, state.low));
+      if (fallback !== currentPage) setPage(fallback);
+      searchRef.current = null;
+      return;
+    }
+
+    const next = Math.floor((state.low + state.high) / 2);
+    if (next !== currentPage) {
+      setPage(next);
+    } else {
+      searchRef.current = null;
+    }
+  }, [eventsData?.date_range?.current_page?.start, eventsData?.date_range?.current_page?.end, currentPage, setPage, eventsData]);
   
   // Transform API data to table format
   useEffect(() => {
